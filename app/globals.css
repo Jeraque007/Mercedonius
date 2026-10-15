@@ -1,0 +1,472 @@
+/* Astronomical Calendar Theme */
+:root {
+  --bg-primary: #0a0a12;
+  --bg-secondary: #12121f;
+  --bg-card: #1e1e36;
+  --text-primary: #f0f0f5;
+  --text-secondary: #a0a0b0;
+  --text-muted: #606070;
+  --gold: #d4af37;
+  --gold-light: #f0d060;
+  --blue-cyan: #4a9eff;
+  --border: #2a2a40;
+  --border-light: #3a3a50;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.calendar-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.logo-icon { font-size: 1.5rem; }
+
+.calendar-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nav-btn {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: 0.2s ease;
+}
+
+.nav-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+.nav-btn.primary {
+  background: var(--gold);
+  color: var(--bg-primary);
+  font-weight: 600;
+}
+
+.calendar-main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.calendar-display {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.primary-date-display {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+.date-title {
+  font-family: Georgia, serif;
+  font-size: 2.5rem;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+.date-main { color: var(--text-primary); }
+.date-subtitle { color: var(--text-secondary); font-size: 1.25rem; }
+
+.date-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.detail-item label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.detail-item span { font-size: 1.1rem; color: var(--text-primary); font-weight: 500; }
+
+.sidebar {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.chakra-reference .widget {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.chakra-reference h3 {
+  font-size: 1.1rem;
+  color: var(--gold);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.chakra-reference p { color: var(--text-secondary); font-size: 0.9rem; }
+.chakra-reference strong { color: var(--text-primary); }
+
+.calendar-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.calendar-switcher h3 { font-size: 1.1rem; }
+
+.switch-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.switch-buttons button {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: 0.2s ease;
+}
+
+.switch-buttons button:hover { border-color: var(--gold); color: var(--text-primary); }
+.switch-buttons button.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--bg-primary);
+  font-weight: 600;
+}
+
+.day-detail-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+.day-detail-panel h3 { font-size: 1.25rem; color: var(--gold); margin-bottom: 1.5rem; }
+
+.day-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.detail-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.detail-section h4 {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.detail-row:last-child { border-bottom: none; }
+.detail-row label { color: var(--text-muted); font-size: 0.9rem; }
+.detail-row span { color: var(--text-primary); font-size: 0.95rem; font-weight: 500; }
+
+.events-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.events-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+.event-icon { font-size: 1.25rem; }
+.event-label { font-weight: 500; }
+
+.no-events {
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+}
+
+.app-footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Astronomical Zodiac / Comparison / Rising / My Sky ── */
+.zodiac-info {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+.zodiac-title { font-size: 1.1rem; color: var(--gold); margin-bottom: 0.75rem; }
+.zodiac-description p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.75rem; }
+.zodiac-description strong { color: var(--gold-light); }
+
+.zodiac-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.constellation-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+.constellation-icon { font-size: 1.1rem; }
+.constellation-name { flex: 1; color: var(--text-primary); }
+.constellation-index { color: var(--text-muted); font-size: 0.75rem; }
+
+.sun-transition {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-light);
+}
+.sun-transition label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.sun-transition span { color: var(--gold-light); font-weight: 600; }
+
+.near-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid var(--gold);
+  color: var(--gold-light);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+}
+.detail-toggle { margin-top: 1.25rem; }
+
+/* ── Comparison panel ── */
+.comparison-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+.comparison-header h3 { font-size: 1.1rem; color: var(--gold); margin-bottom: 1rem; }
+.comparison-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.comparison-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+.item-header { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.5rem; }
+.item-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+.item-value { font-size: 1.15rem; font-weight: 600; color: var(--gold-light); }
+.item-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.item-detail .note { line-height: 1.5; }
+.item-detail strong { color: var(--text-primary); }
+
+/* ── Rising info ── */
+.rising-info { display: flex; flex-direction: column; gap: 0.75rem; }
+.rising-display { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.rising-icon { font-size: 1.5rem; color: var(--blue-cyan); }
+.rising-name { font-size: 1.15rem; font-weight: 600; color: var(--gold-light); }
+.rising-detail { color: var(--text-secondary); font-size: 0.9rem; }
+.rising-detail p { padding: 0.25rem 0; }
+
+/* ── My Sky / Birth sky ── */
+.my-sky { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+.my-sky h3 { font-size: 1.25rem; color: var(--gold); }
+.sky-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+.sky-section h4 {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.birth-sky-form { display: flex; flex-direction: column; gap: 1rem; }
+.input-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+.input-item { display: flex; flex-direction: column; gap: 0.35rem; }
+.input-item label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+.input-item input {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+}
+.input-item input:focus { outline: none; border-color: var(--gold); }
+.search-btn {
+  align-self: flex-start;
+  background: var(--gold);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+.search-btn:hover { background: var(--gold-light); }
+
+.birth-sky-results { margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.sky-object {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.object-label {
+  min-width: 110px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+.object-icon { font-size: 1.1rem; }
+.object-value { color: var(--text-primary); font-weight: 500; }
+
+.full-results {
+  padding: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.full-results p { font-size: 0.9rem; color: var(--text-secondary); padding: 0.3rem 0; }
+.full-results strong { color: var(--text-primary); }
+.status-note { font-size: 0.85rem; color: var(--text-muted); font-style: italic; }
+
+.tonight-sky { display: flex; flex-direction: column; gap: 0.5rem; }
+.gregorian-date,
+.intercalaris-date {
+  padding: 0.65rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+.distinction-note { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+.note-label { color: var(--gold); font-weight: 600; }
+
+@media (max-width: 768px) {
+  .app-header { flex-direction: column; gap: 1rem; padding: 1rem; }
+  .calendar-main { padding: 1rem; }
+  .date-title { font-size: 1.75rem; }
+}

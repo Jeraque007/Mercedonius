@@ -1,0 +1,46 @@
+﻿// 7. Emit data/iau-boundaries.ts
+
+const NAMES = {
+  AND: 'Andromeda', ANT: 'Antlia', APS: 'Apus', AQR: 'Aquarius', AQL: 'Aquila', ARA: 'Ara',
+  ARI: 'Aries', AUR: 'Auriga', BOO: 'Bootes', CAE: 'Caelum', CAM: 'Camelopardalis', CNC: 'Cancer',
+  CVN: 'Canes Venatici', CMA: 'Canis Major', CMI: 'Canis Minor', CAP: 'Capricornus', CAR: 'Carina',
+  CAS: 'Cassiopeia', CEN: 'Centaurus', CEP: 'Cepheus', CET: 'Cetus', CHA: 'Chamaeleon', CIR: 'Circinus',
+  COL: 'Columba', COM: 'Coma Berenices', CRA: 'Corona Australis', CRB: 'Corona Borealis', CRV: 'Corvus',
+  CRT: 'Crater', CRU: 'Crux', CYG: 'Cygnus', DEL: 'Delphinus', DOR: 'Dorado', DRA: 'Draco', EQU: 'Equuleus',
+  ERI: 'Eridanus', FOR: 'Fornax', GEM: 'Gemini', GRU: 'Grus', HER: 'Hercules', HOR: 'Horologium',
+  HYA: 'Hydra', HYI: 'Hydrus', IND: 'Indus', LAC: 'Lacerta', LEO: 'Leo', LEP: 'Lepus', LIB: 'Libra',
+  LMI: 'Leo Minor', LUP: 'Lupus', LYN: 'Lynx', LYR: 'Lyra', MEN: 'Mensa', MIC: 'Microscopium',
+  MON: 'Monoceros', MUS: 'Musca', NOR: 'Norma', OCT: 'Octans', OPH: 'Ophiuchus', ORI: 'Orion',
+  PAV: 'Pavo', PEG: 'Pegasus', PER: 'Perseus', PHE: 'Phoenix', PIC: 'Pictor', PSC: 'Pisces',
+  PSA: 'Piscis Austrinus', PUP: 'Puppis', PYX: 'Pyxis', RET: 'Reticulum', SGE: 'Sagitta',
+  SGR: 'Sagittarius', SCO: 'Scorpius', SCL: 'Sculptor', SCT: 'Scutum', SEX: 'Sextans',
+  TAU: 'Taurus', TEL: 'Telescopium', TRI: 'Triangulum', TRA: 'Triangulum Australe', TUC: 'Tucana',
+  UMA: 'Ursa Major', UMI: 'Ursa Minor', VEL: 'Vela', VIR: 'Virgo', VOL: 'Volans', VUL: 'Vulpecula',
+};
+
+const nameRows = [];
+for (const p of polygons) {
+  const display = p.code === 'SER1' ? 'Serpens Caput'
+    : p.code === 'SER2' ? 'Serpens Cauda'
+    : NAMES[p.code];
+  if (!display) throw new Error('No display name for ' + p.code);
+  const family = (p.code === 'SER1' || p.code === 'SER2') ? "', family: 'Serpens'" : "'";
+  nameRows.push(`  { code: '${p.code}', name: '${display}'${family} },`);
+}
+
+const polyRows = polygons.map((p) => {
+  const pts = p.pts.map((v) => (Math.round(v * 1e7) / 1e7)).join(', ');
+  const adj = p.adj.map((a) => (a === null ? 'null' : `'${a}'`)).join(', ');
+  return `  { code: '${p.code}', b1875: [${pts}], segmentAdj: [${adj}] },`;
+});
+
+const meanStr = (sum / n).toFixed(6);
+const maxStr = max.toFixed(6);
+
+const out = `/**
+ * IAU Constellation Boundaries
+ */
+`;
+
+writeFileSync(new URL('../data/iau-boundaries.ts', import.meta.url), out);
+console.log('wrote data/iau-boundaries.ts (' + out.length + ' bytes)');
