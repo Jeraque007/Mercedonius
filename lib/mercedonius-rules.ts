@@ -177,14 +177,21 @@ export const YEAR_NUMBERING = {
 /**
  * PROPOSED leap-year policy (pending approval):
  * a qualifying ("leap") year receives the second (adjustment) year-boundary
- * day. Qualification mirrors the Gregorian leap rule of the anchor year
- * (divisible by 4, except centuries not divisible by 400). This yields year
- * lengths of 365/366 days and a mean year of 365.2425 d — drift-free
- * against the Gregorian calendar.
+ * day, making that year 366 days.
+ *
+ * Qualification rule (precise): Mercedonius year Y spans Gregorian
+ * March 1 Y → (just before) March 1 Y+1 and therefore contains Gregorian
+ * year Y+1's February. Year Y qualifies iff GREGORIAN YEAR Y+1 is leap
+ * under the Gregorian rule (divisible by 4, except centuries not divisible
+ * by 400). Year lengths then mirror Mar→Mar Gregorian spans exactly:
+ * mean year 365.2425 d — drift-free against the Gregorian calendar.
+ * Implemented in lib/mercedonius/engine.ts (isMercedoniusLeapYear).
  */
 export const LEAP_POLICY = {
   adjustmentDayInQualifyingYears: true as const,
   gregorianLeapRule: 'divisible-by-4-unless-by-100-unless-by-400' as const,
+  /** Precise qualification: year Y is leap iff Gregorian year Y+1 is leap. */
+  qualificationYearRule: 'gregorian-leapness-of-Y-plus-1' as const,
   meanYearDays: 365.2425,
   status: 'proposed-pending-approval' as RuleStatus,
 } as const;

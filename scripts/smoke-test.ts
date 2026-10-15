@@ -34,7 +34,7 @@ const today = new Date();
 
 // ── Day detail assembly (exercises the old recursion paths) ──
 const detail = getDayDetail(today);
-check('getDayDetail returns 13-month month 1-13', detail.monthDay.month >= 1 && detail.monthDay.month <= 13, detail.monthDay);
+check('getDayDetail returns valid Mercedonius month (0=boundary, 1-13=months)', detail.monthDay.month >= 0 && detail.monthDay.month <= 13, detail.monthDay);
 check('day of week is non-empty', detail.dayOfWeek.length > 0, detail.dayOfWeek);
 check('moon illumination between 0-100', detail.moon.illumination >= 0 && detail.moon.illumination <= 100, detail.moon.illumination);
 check('moon age between 0-30 days', detail.moon.age >= 0 && detail.moon.age < 30, detail.moon.age);
@@ -45,24 +45,33 @@ check(
 );
 check('events is an array', Array.isArray(detail.events));
 
-// ── 13-Month → Gregorian conversion ──
+// ── Mercedonius → Gregorian conversion (engine-routed, Point 2) ──
 const martius14 = convert13MonthToGregorian(1, 14, 2026);
 check('Martius 14 2026 → March 14', martius14.getMonth() === 2 && martius14.getDate() === 14, martius14.toDateString());
 
 const ianuarius1 = convert13MonthToGregorian(11, 1, 2026);
-check('Ianuarius 1 2026 → January 1', ianuarius1.getMonth() === 0 && ianuarius1.getDate() === 1, ianuarius1.toDateString());
+check('Ianuarius 1 2026 → Dec 6 2026 (day-count arithmetic)', ianuarius1.getMonth() === 11 && ianuarius1.getDate() === 6, ianuarius1.toDateString());
 
-const december31 = convert13MonthToGregorian(10, 31, 2026);
-check('December 31 2026 → Dec 31', december31.getMonth() === 11 && december31.getDate() === 31, december31.toDateString());
+let rejectedInvalid = false;
+try {
+  convert13MonthToGregorian(10, 31, 2026); // invalid: months have ≤28 days
+} catch {
+  rejectedInvalid = true;
+}
+check('invalid Mercedonius date rejected (no clamping)', rejectedInvalid);
 
-// ── Gregorian → 13-Month conversion (round trip) ──
+// ── Gregorian → Mercedonius conversion (round trip) ──
 const march14 = new Date(2026, 2, 14);
 const md = convertGregorianTo13Month(march14);
-check('March 14 → month 1 (Martius)', md.month === 1 && md.day === 14, md);
+check('March 14 2026 → Martius 14 2026', md.month === 1 && md.day === 14 && md.year === 2026, md);
+
+const oct15 = new Date(2026, 9, 15);
+const mdOct = convertGregorianTo13Month(oct15);
+check('Oct 15 2026 → November 5 2026 (NOT a rename)', mdOct.month === 9 && mdOct.day === 5 && mdOct.year === 2026, mdOct);
 
 const jan1 = new Date(2026, 0, 1);
 const mdJan = convertGregorianTo13Month(jan1);
-check('January 1 → month 11 (Ianuarius)', mdJan.month === 11 && mdJan.day === 1, mdJan);
+check('Jan 1 2026 → Ianuarius 27, 2025 (year tail)', mdJan.month === 11 && mdJan.day === 27 && mdJan.year === 2025, mdJan);
 
 // ── Formatting helpers ──
 check('formatDateForDisplay non-empty', formatDateForDisplay(today).length > 0, formatDateForDisplay(today));

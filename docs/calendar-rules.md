@@ -59,8 +59,16 @@ begins on the same weekday**, every year.
   (= J2000.0, 2451545.0, + 60 days).
 
 This is a *convention*, chosen for arithmetic convenience, not a historical
-claim. No conversion code may consume `EPOCH_PROPOSAL` until approval is
-granted. The reference-year choice (2000) is itself part of the proposal.
+claim. The reference-year choice (2000) is itself part of the proposal.
+
+**Implementation status (Point 2):** the authoritative engine
+(`lib/mercedonius/engine.ts`) implements this anchor as the *working*
+convention, because reversible conversion + automated tests were directed
+in Point 2. The anchor is consumed in exactly one place (`EPOCH_ANCHOR_JDN`,
+cross-checked against `EPOCH_PROPOSAL` by the test suite); amending or
+rejecting the proposal later is a single-constant change with no
+re-architecting. Displayed dates remain **provisional** until §3–§5
+approval is granted.
 
 ## 4. Year numbering (PROPOSED — PENDING EXPLICIT APPROVAL)
 
@@ -75,37 +83,58 @@ granted. The reference-year choice (2000) is itself part of the proposal.
 
 - A qualifying ("leap") year receives the **second (adjustment) year-boundary
   day**, making it 366 days.
-- Qualification mirrors the Gregorian leap rule of the anchor year:
-  **divisible by 4, except century years not divisible by 400.**
+- Qualification (precise): Mercedonius year Y spans Gregorian March 1 Y →
+  (just before) March 1 Y+1 and therefore contains Gregorian year Y+1's
+  February. **Year Y qualifies iff Gregorian year Y+1 is leap** under the
+  Gregorian rule: **divisible by 4, except century years not divisible by 400.**
+  (Implemented as `isMercedoniusLeapYear` in the engine.)
+- Derived, engine-verified placement: Februarius 28 of year Y falls on
+  Gregorian February 27 of Y+1; the **year-boundary day(s) are exactly
+  Gregorian February 28 of Y+1 (always) and February 29 of Y+1 (leap years)**.
 - Resulting mean year: **365.2425 days** — identical to the Gregorian mean, so
   the two calendars are **drift-free against each other indefinitely** under
-  this policy.
+  this policy (tested: 400-year spans sum to exactly 146097 days).
 
-## 6. Open decisions (BLOCKING conversion & live wiring)
+## 6. Open decisions
 
 1. **Epoch approval** (§3) — approve, modify the anchor year, or choose
-   differently. Validation plan after approval: round-trip conversion tests,
-   year-length invariants (365/366), weekday-continuity assertions across
-   every boundary.
-2. **Year-boundary day name** — "Year Boundary Day" is a working label only.
+   differently. ⚠️ Still open; validation (round-trips, year-length
+   invariants, weekday-continuity) is now **implemented and passing** in
+   `tests/mercedonius-engine.test.ts`.
+2. **Year-boundary day name** — "Year-Boundary Day" is a working label only.
 3. **Intercalaris semantics** — under the baseline, Intercalaris is a regular
    28-day month (month 13), NOT an intercalary insertion; the intercalary
    function is served by the year-boundary/adjustment day(s). The name
    "Intercalaris" is retained for continuity with the platform's existing
    month set; its appropriateness can be revisited.
-4. **Timezone policy** — local vs UTC for calendar-day boundaries (separate
-   decision; affects conversion implementation, not the rules above).
+4. **Timezone policy** — ✅ **RESOLVED by the Point 2 directive**: astronomical
+   instants are stored/compared in **UTC**; a calendar day is a civil date in
+   ONE explicit IANA zone (the user's selected location zone, defaulting to
+   the device zone until location selection is wired); instants convert to
+   local civil time for display only; all calendar arithmetic runs on
+   civil-date structs (never JS Date clamping or implicit local behaviour).
+   Codified in `lib/time-policy.ts`. Remaining wiring: pass the user's
+   selected zone when location selection lands.
 
-## 7. Explicitly frozen until approval (Point 1 discipline)
+## 7. Implementation status (Point 1 freeze → superseded by Point 2)
 
-- No Gregorian ⇄ Mercedonius conversion functions exist or may be added.
-- No live date value is connected to the visual dial or any display.
-- The legacy relabeling behavior in `lib/date-utils.ts` /
-  `lib/astronomy/calendar-day-astronomy.ts` is **known-incorrect** (renaming,
-  not conversion) and is quarantined for replacement in a later point; it must
-  not be cited as an implementation of this spec.
-- Visual redesign beyond the frozen parallel foundation is on hold until these
-  rules are approved.
+- ✅ **Conversion exists**: `lib/mercedonius/engine.ts` is the single
+  authoritative implementation — pure integer-JDN civil-date arithmetic,
+  reversible by construction, validated by brute-force round-trips over
+  1900–2100 (`tests/mercedonius-engine.test.ts`, run via `npm test`).
+- ✅ **Legacy relabeling removed**: the duplicate month-renaming functions in
+  `lib/date-utils.ts` and `lib/astronomy/calendar-day-astronomy.ts` were
+  deleted; all call sites (page, birth-sky, month grid, calendar service,
+  astronomy day view) now route through the engine. Relabeling must not be
+  reintroduced or cited as an implementation of this spec.
+- ✅ **Explicit time policy**: `lib/time-policy.ts` (see §6.4).
+- ⏳ **Provisional values**: because §3–§5 remain `proposed-pending-approval`,
+  every displayed Mercedonius date is provisional until approval; amendments
+  to the epoch/leap constants propagate automatically (single source of
+  truth, `lib/mercedonius-rules.ts`).
+- ⛔ **Still on hold (later audit points)**: visual dial redesign,
+  eclipse/season hard-coded data replacement, backdrop-asset migration to
+  `public/`.
 
 ## 8. Astronomy classification reminder (context, not rules)
 

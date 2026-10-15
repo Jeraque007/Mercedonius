@@ -1,43 +1,30 @@
 /**
- * Date Conversion Utilities
+ * Date Display Utilities
  *
- * Converts between the 13-Month Calendar and the Gregorian Calendar.
- * The conversion engine is isolated here so that the rules can be
- * changed later without rebuilding the user interface.
+ * DISPLAY + INSTANT-ADAPTER concerns only (redesign Point 2).
+ * All calendar ARITHMETIC lives in the authoritative engine
+ * (lib/mercedonius/engine.ts); this module routes conversions through it
+ * and never maps months itself. Instant ⇄ civil-date bridging follows the
+ * explicit time policy in lib/time-policy.ts.
  */
 
-import { getGregorianMonthName } from './month-config';
+import {
+  getGregorianMonthName,
+  MONTH_NAMES,
+  MONTH_NAMES_SHORT,
+  DAYS_OF_WEEK,
+} from './month-config';
+import { YEAR_STRUCTURE } from './mercedonius-rules';
+import {
+  gregorianToMercedonius,
+  mercedoniusToGregorian,
+  weekdayOfGregorian,
+  type MercedoniusDate,
+} from './mercedonius/engine';
+import { localCivilDate } from './time-policy';
 
 // ──────────────────────────────────────────────
-// Constants
-// ──────────────────────────────────────────────
-
-const TROPICAL_YEAR = 365.2422;
-const LUNAR_CYCLE = 29.53059;
-const GREGORIAN_EPOCH = new Date('2000-01-01T12:00:00Z'); // JD 2451545.0
-const J2000_JD = 2451545.0;
-
-// 13-Month Calendar definitions
-const MONTH_NAMES = [
-  'Martius', 'Aprilis', 'Maius', 'Iunius', 'Quintilis', 'Sextilis',
-  'September', 'October', 'November', 'December', 'Ianuarius', 'Februarius', 'Intercalaris'
-] as const;
-
-const MONTH_NAMES_SHORT = [
-  'Mart.', 'Apr.', 'Mai.', 'Iun.', 'Quint.', 'Sext.',
-  'Sept.', 'Oct.', 'Nov.', 'Dec.', 'Ianu.', 'Febru.', 'Inter.'
-] as const;
-
-// Gregorian month names (0-indexed)
-const GREG_MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
-
-const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
-
-// ──────────────────────────────────────────────
-// Julian Day Number utilities
+// Julian Day utilities (instant domain — shared with astronomy)
 // ──────────────────────────────────────────────
 
 /**
@@ -72,78 +59,36 @@ export function toAstronomicalDay(date: Date): number {
 }
 
 // ──────────────────────────────────────────────
-// Date conversion: 13-Month → Gregorian
+// Date conversion — engine-routed (authoritative: lib/mercedonius/engine.ts)
 // ──────────────────────────────────────────────
 
-export interface MonthDay {
-  month: number;
-  day: number;
-  year: number;
+/**
+ * A Mercedonius civil date (engine type).
+ *  - month 1–13: named months, day 1–28.
+ *  - month 0: year-boundary day(s) outside all months (day 1; day 2 in
+ *    leap years only — display name pending approval).
+ */
+export type MonthDay = MercedoniusDate;
+
+/**
+ * Instant → Mercedonius civil date.
+ * The instant is resolved to its civil date per the explicit time policy
+ * (user-selected zone, default device zone), then converted by the
+ * authoritative engine — real day-count arithmetic, never a month rename.
+ */
+export function convertGregorianTo13Month(gregorianDate: Date): MonthDay {
+  return gregorianToMercedonius(localCivilDate(gregorianDate));
 }
 
 /**
- * Convert a 13-Month Calendar date to Gregorian date.
- *
- * The 13-month calendar aligns months by their ordinal position in the year.
- * Month 11 = Ianuarius (January), Month 12 = Februarius (February)
- * These are the extra months that map to Gregorian Jan/Feb of the same year.
- *
- * Intercalaris (month 13) is the intercalary/adjustment month.
+ * Mercedonius civil date → Date at LOCAL MIDNIGHT of the Gregorian day.
+ * Presentation convenience for legacy callers; the arithmetic itself is
+ * zone-free and lives in the engine. Throws RangeError on invalid input —
+ * never clamps (Point 2: explicit rejection over silent adjustment).
  */
-export function convert13MonthToGregorian(
-  month: number,
-  day: number,
-  year: number
-): Date {
-  // Months 11-12 map to January-February of the same year
-  if (month >= 11 && month <= 12) {
-    const gregorianMonth = month - 11;
-    return new Date(year, gregorianMonth, day);
-  }
-
-  // Months 1-10 map to March-December of the same year
-  if (month >= 1 && month <= 10) {
-    const targetMonth = month + 1; // Month 1 = March (index 2)
-    const date = new Date(year, targetMonth, day);
-
-    // Validate and clamp
-    if (date.getMonth() === targetMonth && date.getDate() === day) {
-      return date;
-    }
-    return new Date(year, targetMonth, 1);
-  }
-
-  // Month 13 = Intercalaris (leap/intercalary month)
-  // Map to February of the following year
-  return new Date(year + 1, 1, day);
-}
-
-/**
- * Find which 13-month date corresponds to a given Gregorian date.
- */
-export function convertGregorianTo13Month(
-  gregorianDate: Date
-): MonthDay {
-  const month = gregorianDate.getMonth(); // 0-11
-  const day = gregorianDate.getDate();
-  const year = gregorianDate.getFullYear();
-
-  // Map Gregorian months to 13-month months
-  // March (index 2) → month 1 (Martius) … December (index 11) → month 10
-  if (month >= 2 && month <= 11) {
-    return { month: month - 1, day, year };
-  }
-
-  // January and February map to months 11 and 12
-  if (month === 0) {
-    return { month: 11, day, year };
-  }
-  if (month === 1) {
-    return { month: 12, day, year };
-  }
-
-  // Should not reach here for valid dates
-  return { month: 1, day, year };
+export function convert13MonthToGregorian(month: number, day: number, year: number): Date {
+  const g = mercedoniusToGregorian({ year, month, day });
+  return new Date(g.year, g.month - 1, g.day);
 }
 
 // ──────────────────────────────────────────────
@@ -151,10 +96,12 @@ export function convertGregorianTo13Month(
 // ──────────────────────────────────────────────
 
 /**
- * Get day of week for a date (0=Sunday ... 6=Saturday)
+ * Weekday index (0=Sunday … 6=Saturday) of the instant's CIVIL date.
+ * Time policy: selected zone, default device zone. Continuous JDN cycle —
+ * never reset by any month or year boundary.
  */
 export function getDayOfWeek(date: Date): number {
-  return date.getUTCDay();
+  return weekdayOfGregorian(localCivilDate(date));
 }
 
 /**
@@ -179,13 +126,36 @@ export function formatDateForDisplay(date: Date): string {
 }
 
 /**
- * Format a 13-month date for display (e.g., "Martius 14")
+ * Month label for display, boundary-aware: months 1–13 → Latin names,
+ * month 0 → the working label for year-boundary days (name pending).
+ */
+export function getMercedoniusMonthLabel(month: number): string {
+  if (month >= 1 && month <= 13) {
+    return MONTH_NAMES[month - 1];
+  }
+  if (month === 0) {
+    return YEAR_STRUCTURE.proposedYearBoundaryDayName;
+  }
+  return 'Unknown';
+}
+
+/**
+ * Format a full Mercedonius date for display,
+ * e.g. "Martius 14, 2026" or "Year-Boundary Day 2, 2028".
+ */
+export function formatMercedoniusDate(md: MonthDay): string {
+  return `${getMercedoniusMonthLabel(md.month)} ${md.day}, ${md.year}`;
+}
+
+/**
+ * Format a 13-month date for display (e.g., "Martius 14").
+ * month 0 renders the year-boundary working label.
  */
 export function format13MonthDate(month: number, day: number): string {
-  if (month < 1 || month > 13) {
+  if (month !== 0 && (month < 1 || month > 13)) {
     return 'Invalid';
   }
-  return `${MONTH_NAMES[month - 1]} ${day}`;
+  return `${getMercedoniusMonthLabel(month)} ${day}`;
 }
 
 /**

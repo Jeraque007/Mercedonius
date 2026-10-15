@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "tsx --test tests/mercedonius-engine.test.ts",
+    "test:smoke": "tsx scripts/smoke-test.ts"
   },
   "dependencies": {
     "@photostructure/tz-lookup": "^11.7.0",

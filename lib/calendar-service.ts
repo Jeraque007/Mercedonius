@@ -17,10 +17,27 @@ export {
   convertGregorianTo13Month,
   formatDateForDisplay,
   format13MonthDate,
+  formatMercedoniusDate,
   get13MonthName,
+  getMercedoniusMonthLabel,
   getShort13MonthName,
 } from './date-utils';
 export type { MonthDay } from './date-utils';
+// Authoritative calendar engine (Point 2: ALL conversions route through here)
+export {
+  gregorianToMercedonius,
+  mercedoniusToGregorian,
+  gregorianToJDN,
+  jdnToGregorian,
+  weekdayFromJDN,
+  weekdayOfGregorian,
+  mercedoniusYearLength,
+  isMercedoniusLeapYear,
+  isValidMercedoniusDate,
+} from './mercedonius/engine';
+export type { GregorianDate, MercedoniusDate } from './mercedonius/engine';
+// Explicit time policy: instants UTC, civil dates per explicit zone
+export { localCivilDate, utcJDN } from './time-policy';
 export {
   getMoonPhase,
   getMoonIcon,

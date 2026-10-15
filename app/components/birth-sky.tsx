@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { calculateBirthSky } from '@lib/astronomy';
 import type { BirthSkyResult } from '@lib/astronomy';
-import { convertGregorianTo13Month, get13MonthName } from '@lib/date-utils';
+import {
+  convertGregorianTo13Month,
+  formatMercedoniusDate as formatMercedoniusCivilDate,
+} from '@lib/date-utils';
 
-/** Format a date in the Mercedonius (13-month) calendar, e.g. "October 15, 2026". */
+/** Format an instant's Mercedonius date, e.g. "November 5, 2026" (engine-routed). */
 function formatMercedoniusDate(date: Date): string {
-  const md = convertGregorianTo13Month(date);
-  return `${get13MonthName(md.month)} ${md.day}, ${md.year}`;
+  return formatMercedoniusCivilDate(convertGregorianTo13Month(date));
 }
 
 interface BirthProfile {

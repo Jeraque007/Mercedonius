@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { formatDateForDisplay } from '@lib/date-utils';
 import {
-  get13MonthName,
+  getMercedoniusMonthLabel,
   getMoonIconForDate,
   getMoonNameForDate,
   getMoonIlluminationForDate,
@@ -24,7 +24,7 @@ export default function Calendar() {
   const [showDayDetail, setShowDayDetail] = useState(false);
 
   const dayAstronomy = getCalendarDayWithAstronomy(currentDate);
-  const monthName = get13MonthName(dayAstronomy.monthDay.month);
+  const monthName = getMercedoniusMonthLabel(dayAstronomy.monthDay.month);
 
   const sunConst = getSunConstellation(currentDate);
   const weekdayRef = getWeekdayReference(dayAstronomy.dayOfWeek);
@@ -194,7 +194,7 @@ export default function Calendar() {
                 <h4>Calendar Date</h4>
                 <div className="detail-row">
                   <label>Mercedonius date:</label>
-                  <span>{get13MonthName(dayAstronomy.monthDay.month)} {dayAstronomy.monthDay.day}</span>
+                  <span>{getMercedoniusMonthLabel(dayAstronomy.monthDay.month)} {dayAstronomy.monthDay.day}</span>
                 </div>
                 <div className="detail-row">
                   <label>Gregorian:</label>

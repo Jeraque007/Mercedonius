@@ -13,9 +13,17 @@ import type {
   ConstellationResult,
   AstronomicalEvent,
 } from './types';
+import { DAYS_OF_WEEK } from '../month-config';
+import { gregorianToMercedonius, weekdayOfGregorian } from '../mercedonius/engine';
+import { localCivilDate } from '../time-policy';
 
 export function getCalendarDayWithAstronomy(date: Date): CalendarDayWithAstronomy {
-  const dayStart = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()).getTime();
+  // Explicit time policy (Point 2):
+  //  - the CALENDAR day = the instant's civil date in the selected zone
+  //    (default device zone); converted by the authoritative engine only.
+  //  - the day WINDOW for UTC-domain events = UTC midnight → UTC midnight.
+  const civilDate = localCivilDate(date);
+  const dayStart = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
   const dayEnd = dayStart + 86400000;
 
   const sunPos = getSunEquatorialPosition(date);
@@ -39,8 +47,8 @@ export function getCalendarDayWithAstronomy(date: Date): CalendarDayWithAstronom
 
   return {
     gregorian: date,
-    monthDay: convertTo13Month(date),
-    dayOfWeek: getDayName(date),
+    monthDay: gregorianToMercedonius(civilDate),
+    dayOfWeek: DAYS_OF_WEEK[weekdayOfGregorian(civilDate)],
     sun: sunPos,
     sunConstellation: sunConst.constellationResult,
     moonPhase,
@@ -52,27 +60,9 @@ export function getCalendarDayWithAstronomy(date: Date): CalendarDayWithAstronom
   };
 }
 
-function convertTo13Month(date: Date) {
-  const month = date.getUTCMonth();
-  const day = date.getUTCDate();
-  const year = date.getUTCFullYear();
-
-  if (month >= 2 && month <= 11) {
-    return { month: month - 1, day, year };
-  }
-  if (month === 0) {
-    return { month: 11, day, year };
-  }
-  if (month === 1) {
-    return { month: 12, day, year };
-  }
-  return { month: 1, day, year };
-}
-
-function getDayName(date: Date): string {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  return days[date.getUTCDay()];
-}
+// Calendar conversion & weekday naming are owned by the authoritative
+// engine (lib/mercedonius/engine.ts). The former duplicate relabeling
+// implementation that lived here was REMOVED in redesign Point 2.
 
 export function getSeasonalEventsForWindow(date: Date, windowStart: number, windowEnd: number): AstronomicalEvent[] {
   const events: AstronomicalEvent[] = [];
