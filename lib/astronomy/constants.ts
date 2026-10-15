@@ -1,15 +1,15 @@
 /**
- * Astronomical Constants for the Intercalaris Calendar
+ * Astronomical Constants for the Mercedonius Calendar
  *
  * These constants are used by the astronomical calculation engine.
  * The engine is independent of the calendar engine and works for
- * Intercalaris, Gregorian, and any other calendar system.
+ * Mercedonius, Gregorian, and any other calendar system.
  */
 
 /** Julian Day Number for J2000.0 epoch (2000-01-01 12:00 UTC) */
 export const J2000_JD = 2451545.0;
 
-/** Days in the Intercalaris year (13 months × 28 days + adjustments = 365) */
+/** Days in the Mercedonius year (13 months × 28 days + adjustments = 365) */
 export const INTERCALARIS_YEAR_DAYS = 365;
 
 /** Julian Day Number for J1900.0 epoch (1900-01-01 12:00 UTC) */
@@ -77,9 +77,9 @@ export const PRECESSION_RATE_ARCSEC_PER_YEAR = 5028.796;
 export const LEAP_SECOND_EARLY_2000S = 34;
 
 /**
- * List of months in the Intercalaris calendar (1-13).
- * Months 1-10 = Martius through Intercalaris.
- * Months 11-12 = January-February (mapped differently).
+ * List of months in the Mercedonius calendar (1-13).
+ * Months 1-10 = Martius through December.
+ * Months 11-12 = Ianuarius, Februarius (mapped to Gregorian Jan-Feb).
  * Month 13 = Intercalaris (intercalary month).
  */
 export const INTERCALARIS_MONTHS: ReadonlyArray<{ number: number; name: string }> = [

@@ -14,6 +14,9 @@ import { CONSTELLATION_NAMES, CONSTELLATION_ICONS, getTraditionalZodiacSign } fr
 import { ComparisonPanel } from './components/comparison-panel';
 import { MySkySection } from './components/birth-sky';
 import { RisingInfo } from './components/rising-info';
+import { MonthGrid } from './components/month-grid';
+import { WeekdayReferenceSection } from './components/weekday-reference';
+import { getWeekdayReference, PLANET_GLYPHS } from '@data/astrology';
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
@@ -24,6 +27,7 @@ export default function Calendar() {
   const monthName = get13MonthName(dayAstronomy.monthDay.month);
 
   const sunConst = getSunConstellation(currentDate);
+  const weekdayRef = getWeekdayReference(dayAstronomy.dayOfWeek);
 
   const eclipseEvents = dayAstronomy.astronomicalEvents.filter((e: any) =>
     e.type === 'solar_eclipse' || e.type === 'lunar_eclipse'
@@ -56,7 +60,7 @@ export default function Calendar() {
       <header className="app-header">
         <div className="logo">
           <span className="logo-icon">☀️</span>
-          <span>13-Month Calendar</span>
+          <span>Mercedonius · 13-Month Calendar</span>
         </div>
 
         <div className="calendar-controls">
@@ -71,18 +75,24 @@ export default function Calendar() {
           <div className="primary-date-display">
             <h1 className="date-title">
               <span className="date-main">{formatDateForDisplay(currentDate)}</span>
-              <span className="date-subtitle">{monthName} {dayAstronomy.monthDay.day}</span>
+              <span className="date-subtitle">Mercedonius — {monthName} {dayAstronomy.monthDay.day}</span>
             </h1>
 
             <div className="date-details">
               <div className="detail-item">
-                <label>Intercalaris:</label>
+                <label>Mercedonius:</label>
                 <span>{monthName} {dayAstronomy.monthDay.day}</span>
               </div>
               <div className="detail-item">
                 <label>Day:</label>
                 <span>{dayAstronomy.dayOfWeek}</span>
               </div>
+              {weekdayRef && (
+                <div className="detail-item">
+                  <label>Planetary day:</label>
+                  <span>{PLANET_GLYPHS[weekdayRef.planet]} {weekdayRef.planet} · {weekdayRef.dies}</span>
+                </div>
+              )}
               <div className="detail-item">
                 <label>Sun Constellation:</label>
                 <span>☀️ {sunConst.constellation.name}</span>
@@ -155,6 +165,27 @@ export default function Calendar() {
           </div>
         </section>
 
+        <section className={`calendar-mode-views ${viewMode === 'dual' ? 'dual' : 'single'}`}>
+          {(viewMode === 'dual' || viewMode === 'monthly') && (
+            <MonthGrid
+              calendar="mercedonius"
+              date={currentDate}
+              selected={currentDate}
+              onSelect={setCurrentDate}
+            />
+          )}
+          {(viewMode === 'dual' || viewMode === 'gregorian') && (
+            <MonthGrid
+              calendar="gregorian"
+              date={currentDate}
+              selected={currentDate}
+              onSelect={setCurrentDate}
+            />
+          )}
+        </section>
+
+        <WeekdayReferenceSection currentDate={currentDate} />
+
         {showDayDetail && (
           <section className="day-detail-panel">
             <h3>Day Detail</h3>
@@ -162,7 +193,7 @@ export default function Calendar() {
               <div className="detail-section">
                 <h4>Calendar Date</h4>
                 <div className="detail-row">
-                  <label>13-month date:</label>
+                  <label>Mercedonius date:</label>
                   <span>{get13MonthName(dayAstronomy.monthDay.month)} {dayAstronomy.monthDay.day}</span>
                 </div>
                 <div className="detail-row">
@@ -174,6 +205,32 @@ export default function Calendar() {
                   <span>{dayAstronomy.dayOfWeek}</span>
                 </div>
               </div>
+
+              {weekdayRef && (
+                <div className="detail-section">
+                  <h4>Weekday — Planet, Origin &amp; Chakra</h4>
+                  <div className="detail-row">
+                    <label>Latin name:</label>
+                    <span>{weekdayRef.dies}</span>
+                  </div>
+                  <div className="detail-row">
+                    <label>Planet:</label>
+                    <span>{PLANET_GLYPHS[weekdayRef.planet]} {weekdayRef.planet}</span>
+                  </div>
+                  <div className="detail-row">
+                    <label>Origin:</label>
+                    <span>{weekdayRef.origin}</span>
+                  </div>
+                  <div className="detail-row">
+                    <label>Chakra:</label>
+                    <span>{weekdayRef.chakraSanskrit} ({weekdayRef.chakraEnglish})</span>
+                  </div>
+                  <div className="detail-row">
+                    <label>Frequency:</label>
+                    <span>{weekdayRef.frequencyHz} Hz</span>
+                  </div>
+                </div>
+              )}
 
               <div className="detail-section">
                 <h4>Sun Position (Astronomical)</h4>

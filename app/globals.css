@@ -98,6 +98,9 @@ body {
   color: var(--text-primary);
   margin-bottom: 1.5rem;
   line-height: 1.2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .date-main { color: var(--text-primary); }
@@ -452,7 +455,7 @@ body {
 
 .tonight-sky { display: flex; flex-direction: column; gap: 0.5rem; }
 .gregorian-date,
-.intercalaris-date {
+.mercedonius-date {
   padding: 0.65rem 0.75rem;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -462,11 +465,293 @@ body {
   margin-top: 0.5rem;
 }
 
+.date-kind {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
 .distinction-note { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
 .note-label { color: var(--gold); font-weight: 600; }
+
+/* ── Calendar mode views (month grids) ── */
+.calendar-mode-views {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.calendar-mode-views.dual {
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+
+.calendar-mode-views.single {
+  grid-template-columns: 1fr;
+}
+
+.month-grid-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.month-grid-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.month-grid-title {
+  font-family: Georgia, serif;
+  font-size: 1.3rem;
+  color: var(--gold);
+}
+
+.month-grid-sub {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.month-grid-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.month-grid-nav button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: inherit;
+  transition: 0.2s ease;
+}
+
+.month-grid-nav button:hover {
+  border-color: var(--gold);
+  color: var(--text-primary);
+}
+
+.month-weekdays,
+.month-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.4rem;
+}
+
+.month-weekdays {
+  margin-bottom: 0.4rem;
+}
+
+.month-weekdays div {
+  text-align: center;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 0.35rem 0;
+}
+
+.month-weekdays .week-start {
+  color: var(--gold);
+}
+
+.day-cell {
+  min-height: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: 0.15s ease;
+}
+
+.day-cell:hover {
+  border-color: var(--gold);
+}
+
+.day-cell.empty {
+  visibility: hidden;
+  cursor: default;
+  pointer-events: none;
+}
+
+.day-cell.today {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+
+.day-cell.selected {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--bg-primary);
+  font-weight: 600;
+}
+
+.day-cell .day-planet {
+  font-size: 0.7rem;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.day-cell.selected .day-planet {
+  opacity: 1;
+}
+
+/* ── Weekday reference (planets, origins, chakras) ── */
+.weekday-reference {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.weekday-reference h3 {
+  font-size: 1.1rem;
+  color: var(--gold);
+}
+
+.weekday-note {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.weekday-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.weekday-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.9rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.weekday-card.current {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+
+.weekday-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.weekday-planet-glyph {
+  font-size: 1.35rem;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.weekday-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.weekday-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.weekday-dies {
+  font-size: 0.78rem;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.weekday-planet {
+  margin-left: auto;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+}
+
+.weekday-origin {
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.weekday-origin strong {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.weekday-chakra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border);
+}
+
+.chakra-name {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.chakra-freq {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gold);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  white-space: nowrap;
+}
 
 @media (max-width: 768px) {
   .app-header { flex-direction: column; gap: 1rem; padding: 1rem; }
   .calendar-main { padding: 1rem; }
   .date-title { font-size: 1.75rem; }
+  .month-grid-card,
+  .weekday-reference { padding: 1rem; }
+  .month-grid-header { flex-wrap: wrap; }
+  .day-cell { min-height: 2.5rem; font-size: 0.85rem; }
 }

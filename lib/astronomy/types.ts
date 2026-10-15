@@ -1,5 +1,5 @@
 /**
- * Astronomical Types for the Intercalaris Calendar
+ * Astronomical Types for the Mercedonius Calendar
  *
  * These types define the data structures used by the astronomical
  * calculation engine, which is independent of the calendar engine.

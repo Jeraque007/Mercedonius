@@ -16,7 +16,7 @@ import { deg2rad, rad2deg, normalizeDegrees, normalizeDegreesSigned, eclipticToE
 import { CONSTELLATION_BOUNDARIES, getConstellationByEclipticLongitude, isNearBoundary, CONSTELLATION_NAMES, CONSTELLATION_ICONS } from './constellations';
 import type { SunPositionEquatorial, SunPositionEcliptic, ConstellationResult } from './types';
 
-/** Days in the Intercalaris year (13 months) */
+/** Days in the Mercedonius year (13 months) */
 export const INTERCALARIS_YEAR_DAYS = 365;
 
 /** Days in a Gregorian year */

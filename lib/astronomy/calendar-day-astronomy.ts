@@ -1,7 +1,7 @@
 /**
  * Calendar Day with Astronomical Data
  *
- * Integrates astronomical calculations with the Intercalaris calendar day view.
+ * Integrates astronomical calculations with the Mercedonius calendar day view.
  */
 
 import { getSunEquatorialPosition, getSunConstellation } from './sun';

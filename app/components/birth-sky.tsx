@@ -3,6 +3,13 @@
 import React, { useState } from 'react';
 import { calculateBirthSky } from '@lib/astronomy';
 import type { BirthSkyResult } from '@lib/astronomy';
+import { convertGregorianTo13Month, get13MonthName } from '@lib/date-utils';
+
+/** Format a date in the Mercedonius (13-month) calendar, e.g. "October 15, 2026". */
+function formatMercedoniusDate(date: Date): string {
+  const md = convertGregorianTo13Month(date);
+  return `${get13MonthName(md.month)} ${md.day}, ${md.year}`;
+}
 
 interface BirthProfile {
   date: Date;
@@ -175,9 +182,15 @@ export function MySkySection({
         </div>
       </div>
       <div className="sky-section">
-        <h4>Today's Intercalaris Date</h4>
-        <div className="gregorian-date">{todayView(new Date()).date}</div>
-        <div className="intercalaris-date">{todayView(new Date()).date}</div>
+        <h4>Today's Date</h4>
+        <div className="gregorian-date">
+          <span className="date-kind">Gregorian</span>{' '}
+          {todayView(new Date()).date}
+        </div>
+        <div className="mercedonius-date">
+          <span className="date-kind">Mercedonius</span>{' '}
+          {formatMercedoniusDate(new Date())}
+        </div>
       </div>
     </div>
   );
