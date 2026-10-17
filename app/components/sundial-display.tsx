@@ -42,8 +42,8 @@ export function SundialDisplay({ selectedDate }: SundialDisplayProps) {
     <section className="sundial-dial-page">
       {/* Transparent-background dial image — actual dial display */}
       <img
-        src="/calendar/dial.png"
-        alt="Mercedonius golden dial"
+        src="/calendar/dial.svg"
+        alt="Mercedonius sundial dial"
         className="dial-image"
       />
 
@@ -65,6 +65,9 @@ export function SundialDisplay({ selectedDate }: SundialDisplayProps) {
           {btn.label}
         </button>
       ))}
+      {/* Translucent triangle overlay over the dial centre */}
+      <div className="dial-triangle-overlay" />
+
       {/* Centre content over the triangle */}
       <div className="dial-center-content">
         <div className="dial-center-title">{content?.title}</div>

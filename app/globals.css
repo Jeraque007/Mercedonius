@@ -927,6 +927,31 @@ body {
   margin: 0 auto;
   aspect-ratio: 1 / 1;
 }
+/* Translucent triangle overlay over the dial centre */
+.dial-triangle-overlay {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(ellipse 220px 220px at center, rgba(4, 7, 18, 0.50), rgba(4, 7, 18, 0.80) 65%, rgba(4, 7, 18, 0.92));
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 11;
+}
+
+/* Centred square dial — constrained to viewport height */
+.sundial-dial-page {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  aspect-ratio: 1 / 1;
+  max-height: 100vh;
+  overflow: hidden;
+}
 
 .dial-image {
   width: 100%;
