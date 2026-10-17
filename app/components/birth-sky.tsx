@@ -154,8 +154,11 @@ export function BirthSkyResults({ profile }: BirthSkyResultsProps) {
 }
 
 export function MySkySection({
+  now,
   todayView,
 }: {
+  /** The live current moment — "Today" is real time (Point 4). */
+  now: Date;
   todayView: (date: Date) => { sun: string; moon: string; date: string };
 }) {
   const [birthProfile, setBirthProfile] = useState<BirthProfile | null>(null);
@@ -169,29 +172,29 @@ export function MySkySection({
         {birthProfile && <BirthSkyResults profile={birthProfile} />}
       </div>
       <div className="sky-section">
-        <h4>Tonight's Sky</h4>
+        <h4>Tonight's Sky <span className="pane-origin">— live, current moment</span></h4>
         <div className="tonight-sky">
           <div className="sky-object">
             <span className="object-label">Sun</span>
             <span className="object-icon">☀️</span>
-            <span className="object-value">{todayView(new Date()).sun}</span>
+            <span className="object-value">{todayView(now).sun}</span>
           </div>
           <div className="sky-object">
             <span className="object-label">Moon</span>
             <span className="object-icon">☾</span>
-            <span className="object-value">{todayView(new Date()).moon}</span>
+            <span className="object-value">{todayView(now).moon}</span>
           </div>
         </div>
       </div>
       <div className="sky-section">
-        <h4>Today's Date</h4>
+        <h4>Today's Date <span className="pane-origin">— live, current moment</span></h4>
         <div className="gregorian-date">
           <span className="date-kind">Gregorian</span>{' '}
-          {todayView(new Date()).date}
+          {todayView(now).date}
         </div>
         <div className="mercedonius-date">
           <span className="date-kind">Mercedonius</span>{' '}
-          {formatMercedoniusDate(new Date())}
+          {formatMercedoniusDate(now)}
         </div>
       </div>
     </div>

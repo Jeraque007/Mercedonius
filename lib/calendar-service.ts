@@ -39,6 +39,30 @@ export type { GregorianDate, MercedoniusDate } from './mercedonius/engine';
 // Explicit time policy: instants UTC, civil dates per explicit zone
 export { localCivilDate, utcJDN } from './time-policy';
 export {
+  zoneOffsetMs,
+  zonedCivilToInstant,
+  startOfDayInstant,
+  endOfDayInstant,
+  formatInZone,
+} from './time-policy';
+// Point 4 — living displays: provenance, events, local sky
+export type { DataProvenance, ProvenanceInfo } from './provenance';
+export { PROVENANCE_INFO, PROVENANCE_LEGEND } from './provenance';
+export { getNextEvent, getComputedEventsInWindow, lunarPhaseToEvent } from './events';
+export type { AppLocation, LocalSky, LocalSkyEvent } from './local-sky';
+export { getLocalSky, getEventVisibility } from './local-sky';
+export { getSunRiseSet, getMoonRiseSet, bodyAltitudeDeg } from './astronomy/rise-set';
+export type { RiseSetTimes, HorizonStatus, BodyKind } from './astronomy/rise-set';
+export {
+  getSeasonalInstants,
+  nextSeasonalInstant,
+  findSolarLongitudeCrossing,
+  formatUtcInstant,
+} from './astronomy/seasons';
+export type { SeasonalInstant } from './astronomy/seasons';
+export { findPhaseInstant, findPhasesInWindow } from './astronomy/lunar-phases';
+export type { LunarPhaseKind } from './astronomy/lunar-phases';
+export {
   getMoonPhase,
   getMoonIcon,
   getMoonName,

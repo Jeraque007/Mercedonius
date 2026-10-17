@@ -8,6 +8,8 @@ import { getSunEquatorialPosition, getSunConstellation } from './sun';
 import { getMoonEquatorialPosition, getMoonConstellation, getMoonPhase } from './moon';
 import { getConstellationByName } from './constellations';
 import { getAstronomicalEventsForDate } from '../eclipses';
+import { getComputedEventsInWindow } from '../events';
+import type { DataProvenance } from '../provenance';
 import type {
   CalendarDayWithAstronomy,
   ConstellationResult,
@@ -17,12 +19,13 @@ import { DAYS_OF_WEEK } from '../month-config';
 import { gregorianToMercedonius, weekdayOfGregorian } from '../mercedonius/engine';
 import { localCivilDate } from '../time-policy';
 
-export function getCalendarDayWithAstronomy(date: Date): CalendarDayWithAstronomy {
-  // Explicit time policy (Point 2):
-  //  - the CALENDAR day = the instant's civil date in the selected zone
-  //    (default device zone); converted by the authoritative engine only.
+export function getCalendarDayWithAstronomy(date: Date, timeZone?: string): CalendarDayWithAstronomy {
+  // Explicit time policy (Point 2 / Point 4):
+  //  - the CALENDAR day = the instant's civil date in the SELECTED
+  //    location's zone (or the device zone when none is wired);
+  //    converted by the authoritative engine only.
   //  - the day WINDOW for UTC-domain events = UTC midnight → UTC midnight.
-  const civilDate = localCivilDate(date);
+  const civilDate = localCivilDate(date, timeZone);
   const dayStart = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
   const dayEnd = dayStart + 86400000;
 
@@ -35,15 +38,24 @@ export function getCalendarDayWithAstronomy(date: Date): CalendarDayWithAstronom
   // Moon's IAU constellation, computed from the Moon's current ecliptic longitude
   const moonConstResult: ConstellationResult = getMoonConstellation(date).constellationResult;
 
-  // Eclipse events (solar/lunar) for this day, if any
-  const eclipseEvents = getAstronomicalEventsForDate(date, date.getUTCFullYear());
+  // Eclipse candidates — ILLUSTRATIVE by design (Point 4): the eclipse
+  // list is a fixed sample, not verified eclipse data; provenance makes
+  // that explicit everywhere it is displayed.
+  const eclipseEvents: AstronomicalEvent[] = getAstronomicalEventsForDate(
+    date,
+    date.getUTCFullYear()
+  ).map((e) => ({ ...e, provenance: 'illustrative' as DataProvenance }));
   const hasSolar = eclipseEvents.some((e) => e.type === 'solar_eclipse');
   const hasLunar = eclipseEvents.some((e) => e.type === 'lunar_eclipse');
   const eclipseStatus: CalendarDayWithAstronomy['eclipseStatus'] =
     hasSolar && hasLunar ? 'both' : hasSolar ? 'solar' : hasLunar ? 'lunar' : 'none';
 
-  // Seasonal events (equinoxes/solstices falling inside this day's window)
-  const seasonalEvents: AstronomicalEvent[] = getSeasonalEventsForWindow(date, dayStart, dayEnd);
+  // Computed events (seasonal λ crossings + lunar phase instants) inside
+  // this day's window — live, provenance 'live' (Point 4).
+  const computedEvents: AstronomicalEvent[] = getComputedEventsInWindow(
+    new Date(dayStart),
+    new Date(dayEnd)
+  );
 
   return {
     gregorian: date,
@@ -56,7 +68,7 @@ export function getCalendarDayWithAstronomy(date: Date): CalendarDayWithAstronom
     moonDistanceKm: moonEq.distanceKm,
     moonIllumination: moonPhase.illumination,
     eclipseStatus,
-    astronomicalEvents: [...eclipseEvents, ...seasonalEvents],
+    astronomicalEvents: [...computedEvents, ...eclipseEvents],
   };
 }
 
@@ -64,24 +76,15 @@ export function getCalendarDayWithAstronomy(date: Date): CalendarDayWithAstronom
 // engine (lib/mercedonius/engine.ts). The former duplicate relabeling
 // implementation that lived here was REMOVED in redesign Point 2.
 
-export function getSeasonalEventsForWindow(date: Date, windowStart: number, windowEnd: number): AstronomicalEvent[] {
-  const events: AstronomicalEvent[] = [];
-  const year = date.getUTCFullYear();
-
-  const seasonalEvents: Array<Omit<AstronomicalEvent, 'utcTime'>> = [
-    { type: 'equinox', label: 'Vernal Equinox (Spring)', icon: '🌍', date: new Date(Date.UTC(year, 2, 20, 12, 0, 0)), isMajor: true },
-    { type: 'solstice', label: 'Summer Solstice (Summer)', icon: '☀️', date: new Date(Date.UTC(year, 5, 21, 12, 0, 0)), isMajor: true },
-    { type: 'equinox', label: 'Autumnal Equinox (Autumn)', icon: '🌍', date: new Date(Date.UTC(year, 8, 22, 12, 0, 0)), isMajor: true },
-    { type: 'solstice', label: 'Winter Solstice (Winter)', icon: '☀️', date: new Date(Date.UTC(year, 11, 21, 12, 0, 0)), isMajor: true },
-  ];
-
-  for (const e of seasonalEvents) {
-    if (e.date.getTime() >= windowStart && e.date.getTime() < windowEnd) {
-      events.push({ ...e, utcTime: e.date.getTime() });
-    }
-  }
-
-  return events;
+export function getSeasonalEventsForWindow(
+  _date: Date,
+  windowStart: number,
+  windowEnd: number
+): AstronomicalEvent[] {
+  // Compat wrapper (Point 4): the fixed "noon UTC" table is GONE. This now
+  // returns the live-computed events (seasonal crossings + lunar phase
+  // instants) inside the window, each carrying provenance.
+  return getComputedEventsInWindow(new Date(windowStart), new Date(windowEnd));
 }
 
 /**

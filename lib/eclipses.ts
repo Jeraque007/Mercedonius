@@ -1,12 +1,12 @@
 /**
  * Eclipse Calculations
  *
- * Calculates eclipses (solar, lunar) based on actual astronomical positions.
- * Uses the Moon's phase and alignment with the Sun and Moon to determine
- * eclipse conditions. For precise eclipse predictions, use JPL Horizons
- * or NASA Eclipse Web Site catalog data.
- *
- * This is a simplified implementation suitable for a calendar application.
+ * ⚠ ILLUSTRATIVE DATA (redesign Point 4) ⚠
+ * The eclipse CANDIDATE LIST below is hard-coded presentation sample data —
+ * dates repeat identically every year and magnitudes/durations are made up.
+ * Nothing here is a real eclipse prediction. Consumers MUST surface the
+ * 'illustrative' provenance of anything built from this module; do not
+ * display it as fact. For computed (honest) events use lib/events.ts.
  */
 
 import type { AstronomicalEvent } from './astronomical-events';
@@ -41,21 +41,22 @@ export function getEclipseStatus(date: Date): {
   const phase = getMoonPhase(date);
   const illumination = phase.illumination;
 
-  // New moon: potential solar eclipse
+  // New moon: potential solar eclipse (possibility flag only — the
+  // magnitude is NOT computed, so it is reported as 0 instead of invented).
   if (phase.phase === 'New Moon' && illumination < 5) {
     return {
       hasEclipse: true,
       eclipseType: 'solar',
-      magnitude: 0.05,
+      magnitude: 0,
     };
   }
 
-  // Full moon: potential lunar eclipse
+  // Full moon: potential lunar eclipse (same honesty rule as above).
   if (phase.phase === 'Full Moon' && illumination > 95) {
     return {
       hasEclipse: true,
       eclipseType: 'lunar',
-      magnitude: 0.25,
+      magnitude: 0,
     };
   }
 
@@ -68,7 +69,10 @@ export function getEclipseStatus(date: Date): {
 
 /**
  * Get eclipse events for a given year.
- * Returns a list of probable eclipse dates (simplified).
+ *
+ * ⚠ ILLUSTRATIVE: the candidate list (dates + magnitudes + durations +
+ * visibility strings) below is hard-coded sample content that repeats
+ * identically every year. Label accordingly; never present as prediction.
  */
 export function getEclipses(year: number): EclipseEvent[] {
   const eclipses: EclipseEvent[] = [];
@@ -118,9 +122,16 @@ export function getAstronomicalEventsForDate(date: Date, year: number): Astronom
       type,
       date,
       utcTime: date.getTime(),
-      label: eclipse.eclipseType === 'lunar' ? 'Lunar Eclipse' : 'Solar Eclipse',
+      label:
+        eclipse.eclipseType === 'lunar'
+          ? 'Lunar Eclipse (illustrative candidate)'
+          : 'Solar Eclipse (illustrative candidate)',
       icon: eclipse.eclipseType === 'lunar' ? '🌕🌎' : '🌑☀️',
-      isMajor: eclipse.magnitude > 0.5,
+      isMajor: false,
+      provenance: 'illustrative',
+      detail:
+        'Sample candidate from a fixed illustrative list — NOT verified eclipse data. ' +
+        'Real predictions require a validated catalogue (e.g. NASA GSFC eclipse predictions).',
     });
   }
 

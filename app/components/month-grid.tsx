@@ -1,10 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { convertGregorianTo13Month, getMercedoniusMonthLabel } from '@lib/date-utils';
 import { mercedoniusToGregorian, weekdayOfGregorian } from '@lib/mercedonius/engine';
+import { MONTH_ART } from '@lib/month-art';
 import { GREG_MONTHS } from '@lib/month-config';
 import { PLANET_GLYPHS } from '@data/astrology';
+import { ProvenanceBadge } from './provenance-badge';
 
 interface MonthGridProps {
   /** Any date inside the month to display */
@@ -15,6 +17,8 @@ interface MonthGridProps {
   selected: Date;
   /** Called when a day cell (or nav button) is clicked */
   onSelect: (d: Date) => void;
+  /** Called when the month backdrop artwork is clicked (full-image view) */
+  onImageClick?: (src: string, alt: string) => void;
 }
 
 /** Latin weekday abbreviations (Sunday-first), used in Mercedonius view */
@@ -33,7 +37,7 @@ const PLANET_BY_WEEKDAY = ['Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus',
  * derived from the month's start JDN, clickable days resolved through the
  * inverse conversion — never Gregorian month renaming (Point 2).
  */
-export function MonthGrid({ date, calendar, selected, onSelect }: MonthGridProps) {
+export const MonthGrid = memo(function MonthGrid({ date, calendar, selected, onSelect, onImageClick }: MonthGridProps) {
   const isGreg = calendar === 'gregorian';
   const today = new Date();
 
@@ -63,6 +67,19 @@ export function MonthGrid({ date, calendar, selected, onSelect }: MonthGridProps
     : mer.month === 0
       ? `Mercedonius month 13 of 13 · year-boundary day ${mer.day}`
       : `Mercedonius month ${merMonth} of 13`;
+
+  // Date range of the displayed month (Point 4: month nav updates this live).
+  const rangeText = isGreg
+    ? `${GREG_MONTHS[monthIndex]} 1–${gregDaysInMonth}, ${year}`
+    : (() => {
+        const g1 = mercedoniusToGregorian({ year: mer.year, month: merMonth, day: 1 });
+        const g28 = mercedoniusToGregorian({ year: mer.year, month: merMonth, day: 28 });
+        return `${g1.day} ${GREG_MONTHS[g1.month - 1]} ${g1.year} → ${g28.day} ${GREG_MONTHS[g28.month - 1]} ${g28.year} (Gregorian)`;
+      })();
+
+  // Backdrop artwork follows the DISPLAYED month (Gregorian months have no
+  // artwork — none is invented).
+  const backdropSrc = isGreg ? null : (MONTH_ART[merMonth] ?? null);
 
   const weekHeaders = isGreg ? ENGLISH_WEEKDAY_SHORT : LATIN_WEEKDAY_SHORT;
 
@@ -133,10 +150,33 @@ export function MonthGrid({ date, calendar, selected, onSelect }: MonthGridProps
 
   return (
     <div className="month-grid-card">
+      {backdropSrc && (
+        <div
+          className="month-backdrop"
+          onClick={() => onImageClick?.(backdropSrc, `Backdrop artwork for ${title}`)}
+          style={{ cursor: 'pointer' }}
+          role="button"
+          tabIndex={0}
+          aria-label={`View full artwork for ${title}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onImageClick?.(backdropSrc, `Backdrop artwork for ${title}`);
+            }
+          }}
+        >
+          <img src={backdropSrc} alt={`Backdrop artwork for ${title}`} />
+          <span className="backdrop-caption">
+            <ProvenanceBadge kind="illustrative" compact /> Backdrop artwork — decorative
+            illustration, not data.
+          </span>
+        </div>
+      )}
       <div className="month-grid-header">
         <div>
           <div className="month-grid-title">{title}</div>
           <div className="month-grid-sub">{subtitle}</div>
+          <div className="month-grid-range">{rangeText}</div>
         </div>
         <div className="month-grid-nav">
           <button type="button" onClick={() => stepMonth(-1)}>‹ Prev</button>
@@ -153,4 +193,4 @@ export function MonthGrid({ date, calendar, selected, onSelect }: MonthGridProps
       <div className="month-days">{cells}</div>
     </div>
   );
-}
+});

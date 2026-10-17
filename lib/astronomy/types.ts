@@ -5,6 +5,8 @@
  * calculation engine, which is independent of the calendar engine.
  */
 
+import type { DataProvenance } from '../provenance';
+
 export interface AstronomicalConstellation {
   id: string;
   name: string;
@@ -138,6 +140,8 @@ export interface AstronomicalEvent {
   icon: string;
   isMajor?: boolean;
   detail?: string;
+  /** How this value was produced (Point 4 — honest labelling). */
+  provenance?: DataProvenance;
 }
 
 export interface RisingResult {
