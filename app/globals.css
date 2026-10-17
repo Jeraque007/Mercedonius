@@ -926,6 +926,8 @@ body {
   max-width: 640px;
   margin: 0 auto;
   aspect-ratio: 1 / 1;
+  max-height: 100vh;
+  overflow: hidden;
 }
 /* Translucent triangle overlay over the dial centre */
 .dial-triangle-overlay {
