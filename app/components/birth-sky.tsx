@@ -31,16 +31,29 @@ interface BirthSkyResultsProps {
 }
 
 export function BirthSkyForm({ onSubmit }: BirthSkyFormProps) {
-  const [date, setDate] = useState<Date>(new Date('1975-01-19'));
-  const [time, setTime] = useState<Date>(new Date('1975-01-19T18:15:00'));
-  const [timezone, setTimezone] = useState<string>('Africa/Johannesburg');
-  const [latitude, setLatitude] = useState<number>(-26.1556);
-  const [longitude, setLongitude] = useState<number>(28.2228);
-  const [location, setLocation] = useState<string>('Germiston, South Africa');
+  // Privacy: the form starts BLANK — no personal birth date/time, location or
+  // coordinates are prefilled, and results only appear after an explicit
+  // submit of data the user chose to type.
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [timezone, setTimezone] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [location, setLocation] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ date, time, timezone, latitude, longitude, location });
+    if (!date || !time) return;
+    const lat = parseFloat(latitude);
+    const lon = parseFloat(longitude);
+    onSubmit({
+      date: new Date(date),
+      time: new Date(`${date}T${time}:00`),
+      timezone: timezone || 'UTC',
+      latitude: Number.isFinite(lat) ? lat : 0,
+      longitude: Number.isFinite(lon) ? lon : 0,
+      location,
+    });
   };
 
   return (
@@ -48,34 +61,36 @@ export function BirthSkyForm({ onSubmit }: BirthSkyFormProps) {
       <div className="input-row">
         <div className="input-item">
           <label>Date of birth</label>
-          <input type="date" value={date.toISOString().split('T')[0]} onChange={(e) => setDate(new Date(e.target.value))} />
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div className="input-item">
           <label>Birth time</label>
-          <input type="time" value={time.toLocaleTimeString('en-US', { hour12: false })} onChange={(e) => setTime(new Date(new Date().toDateString() + ' ' + e.target.value + ':00'))} />
+          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
         </div>
       </div>
       <div className="input-row">
         <div className="input-item">
           <label>Location</label>
-          <input type="text" placeholder="e.g., Germiston, South Africa" value={location} onChange={(e) => setLocation(e.target.value)} />
+          <input type="text" placeholder="e.g., Tokyo, Japan" value={location} onChange={(e) => setLocation(e.target.value)} />
         </div>
         <div className="input-item">
           <label>Timezone (IANA)</label>
-          <input type="text" placeholder="e.g., Africa/Johannesburg" value={timezone} onChange={(e) => setTimezone(e.target.value)} />
+          <input type="text" placeholder="e.g., Asia/Tokyo" value={timezone} onChange={(e) => setTimezone(e.target.value)} />
         </div>
       </div>
       <div className="input-row">
         <div className="input-item">
           <label>Latitude (°)</label>
-          <input type="number" step="0.0001" value={latitude?.toString() || ''} onChange={(e) => setLatitude(parseFloat(e.target.value))} />
+          <input type="number" step="0.0001" value={latitude} placeholder="optional" onChange={(e) => setLatitude(e.target.value)} />
         </div>
         <div className="input-item">
           <label>Longitude (°)</label>
-          <input type="number" step="0.0001" value={longitude?.toString() || ''} onChange={(e) => setLongitude(parseFloat(e.target.value))} />
+          <input type="number" step="0.0001" value={longitude} placeholder="optional" onChange={(e) => setLongitude(e.target.value)} />
         </div>
       </div>
-      <button type="submit" className="search-btn">Calculate Birth Sky</button>
+      <button type="submit" className="search-btn" disabled={!date || !time}>
+        Calculate Birth Sky
+      </button>
     </form>
   );
 }
