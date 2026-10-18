@@ -152,3 +152,72 @@ export function seasonalInstantToEvent(s: SeasonalInstant): AstronomicalEvent {
     detail: `Computed λ = ${s.longitudeDeg}° crossing · ${formatUtcInstant(s.instant)} · ${s.season}`,
   };
 }
+
+// ── Hemisphere display helpers ────────────────────────────────────────────
+// The engine computes seasons on the ASTRONOMICAL (northern) convention:
+// λ=0 opens "Spring", λ=90 opens "Summer", and so on. South of the equator
+// the seasons are mirrored, so the DISPLAY layer flips the names while the
+// instants themselves stay identical. (An explicit observer latitude should
+// decide the hemisphere; a time-zone heuristic stands in when it is unknown.)
+
+/** Flip a northern-convention season name for a southern-hemisphere observer. */
+export function seasonForHemisphere(season: string, isSouthernHemisphere: boolean): string {
+  if (!isSouthernHemisphere) return season;
+  switch (season) {
+    case 'Spring': return 'Autumn';
+    case 'Autumn': return 'Spring';
+    case 'Summer': return 'Winter';
+    case 'Winter': return 'Summer';
+    default: return season;
+  }
+}
+
+/** Display label + season for a seasonal instant in the observer's hemisphere. */
+export function seasonalDisplayForHemisphere(
+  instant: SeasonalInstant,
+  isSouthernHemisphere: boolean
+): { label: string; season: string } {
+  if (!isSouthernHemisphere) return { label: instant.label, season: instant.season };
+  const southernLabel: Record<string, string> = {
+    'Vernal Equinox (Spring)': 'Autumnal Equinox (Autumn)', // March equinox: autumn begins in the south
+    'Autumnal Equinox (Autumn)': 'Vernal Equinox (Spring)', // September equinox: spring begins in the south
+    'Summer Solstice (Summer)': 'Winter Solstice (Winter)', // June solstice: winter in the south
+    'Winter Solstice (Winter)': 'Summer Solstice (Summer)', // December solstice: summer in the south
+  };
+  return {
+    label: southernLabel[instant.label] ?? instant.label,
+    season: seasonForHemisphere(instant.season, true),
+  };
+}
+
+/**
+ * Heuristic: is this IANA time zone south of the equator? Used only when an
+ * explicit observer latitude is unknown (a latitude always wins). This is a
+ * curated list of canonical zones whose land area is in the southern
+ * hemisphere — not a geocoder, just the common observer regions.
+ */
+const SOUTHERN_TZ_EXACT: ReadonlySet<string> = new Set([
+  'Africa/Johannesburg', 'Africa/Windhoek', 'Africa/Maputo', 'Africa/Harare',
+  'Africa/Lusaka', 'Africa/Blantyre', 'Africa/Gaborone', 'Africa/Maseru',
+  'Africa/Mbabane', 'Africa/Dar_es_Salaam', 'Africa/Nairobi', 'Africa/Kigali',
+  'Africa/Bujumbura', 'Africa/Lubumbashi', 'Africa/Kinshasa', 'Africa/Brazzaville',
+  'America/Sao_Paulo', 'America/Bahia', 'America/Belem', 'America/Fortaleza',
+  'America/Maceio', 'America/Recife', 'America/Araguaina', 'America/Manaus',
+  'America/Campo_Grande', 'America/Cuiaba', 'America/Boa_Vista', 'America/Rio_Branco',
+  'America/Santarem', 'America/Santiago', 'America/Montevideo', 'America/La_Paz',
+  'America/Asuncion', 'America/Guayaquil', 'America/Easter', 'Pacific/Easter',
+  'Pacific/Auckland', 'Pacific/Chatham', 'Pacific/Fiji', 'Pacific/Guadalcanal',
+  'Pacific/Port_Moresby', 'Pacific/Norfolk', 'Pacific/Noumea', 'Pacific/Tongatapu',
+  'Indian/Antananarivo', 'Indian/Mauritius', 'Indian/Reunion', 'Indian/Comoro',
+  'Indian/Mayotte',
+]);
+
+const SOUTHERN_TZ_PREFIXES: readonly string[] = [
+  'Australia/', 'Antarctica/', 'America/Argentina/',
+];
+
+export function isLikelySouthernTimeZone(timeZone: string): boolean {
+  if (!timeZone) return false;
+  if (SOUTHERN_TZ_EXACT.has(timeZone)) return true;
+  return SOUTHERN_TZ_PREFIXES.some((p) => timeZone.startsWith(p));
+}

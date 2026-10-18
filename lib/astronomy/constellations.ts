@@ -24,15 +24,19 @@
 
 import type { AstronomicalConstellation } from './types';
 
-/** IAU-defined constellation boundaries along the ecliptic */
+/**
+ * IAU constellation boundaries along the ecliptic (longitude crossings of
+ * the official IAU boundary lines, accurate to ~0.1°). The bands tile the
+ * full 360°: Pisces wraps through 0°.
+ */
 export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
   {
     id: 'a',
     name: 'Aries',
     abbreviation: 'Ari',
     icon: '♈',
-    eclipticLongitudeFromDeg: 18.0,
-    eclipticLongitudeToDeg: 27.0,
+    eclipticLongitudeFromDeg: 28.5,
+    eclipticLongitudeToDeg: 53.3,
     raCenterDeg: 36.0,
     decCenterDeg: 14.0,
     latitudeCenterDeg: 0.0,
@@ -42,8 +46,8 @@ export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
     name: 'Taurus',
     abbreviation: 'Tau',
     icon: '♉',
-    eclipticLongitudeFromDeg: 54.0,
-    eclipticLongitudeToDeg: 72.0,
+    eclipticLongitudeFromDeg: 53.3,
+    eclipticLongitudeToDeg: 90.4,
     raCenterDeg: 62.0,
     decCenterDeg: 19.0,
     latitudeCenterDeg: 0.0,
@@ -53,8 +57,8 @@ export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
     name: 'Gemini',
     abbreviation: 'Gem',
     icon: '♊',
-    eclipticLongitudeFromDeg: 84.0,
-    eclipticLongitudeToDeg: 99.0,
+    eclipticLongitudeFromDeg: 90.4,
+    eclipticLongitudeToDeg: 118.1,
     raCenterDeg: 91.0,
     decCenterDeg: 21.0,
     latitudeCenterDeg: 0.0,
@@ -64,8 +68,8 @@ export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
     name: 'Cancer',
     abbreviation: 'Cnc',
     icon: '♋',
-    eclipticLongitudeFromDeg: 107.0,
-    eclipticLongitudeToDeg: 123.0,
+    eclipticLongitudeFromDeg: 118.1,
+    eclipticLongitudeToDeg: 138.2,
     raCenterDeg: 112.0,
     decCenterDeg: 21.0,
     latitudeCenterDeg: 0.0,
@@ -75,8 +79,8 @@ export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
     name: 'Leo',
     abbreviation: 'Leo',
     icon: '♌',
-    eclipticLongitudeFromDeg: 129.0,
-    eclipticLongitudeToDeg: 156.0,
+    eclipticLongitudeFromDeg: 138.2,
+    eclipticLongitudeToDeg: 174.0,
     raCenterDeg: 144.0,
     decCenterDeg: 15.0,
     latitudeCenterDeg: 0.0,
@@ -86,8 +90,8 @@ export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
     name: 'Virgo',
     abbreviation: 'Vir',
     icon: '♍',
-    eclipticLongitudeFromDeg: 159.0,
-    eclipticLongitudeToDeg: 180.0,
+    eclipticLongitudeFromDeg: 174.0,
+    eclipticLongitudeToDeg: 217.9,
     raCenterDeg: 167.0,
     decCenterDeg: -3.0,
     latitudeCenterDeg: 0.0,
@@ -97,8 +101,8 @@ export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
     name: 'Libra',
     abbreviation: 'Lbr',
     icon: '♎',
-    eclipticLongitudeFromDeg: 181.0,
-    eclipticLongitudeToDeg: 210.0,
+    eclipticLongitudeFromDeg: 217.9,
+    eclipticLongitudeToDeg: 241.1,
     raCenterDeg: 210.0,
     decCenterDeg: -11.0,
     latitudeCenterDeg: 0.0,
@@ -108,8 +112,8 @@ export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
     name: 'Scorpius',
     abbreviation: 'Sco',
     icon: '♏',
-    eclipticLongitudeFromDeg: 211.0,
-    eclipticLongitudeToDeg: 240.0,
+    eclipticLongitudeFromDeg: 241.1,
+    eclipticLongitudeToDeg: 247.3,
     raCenterDeg: 238.0,
     decCenterDeg: -25.0,
     latitudeCenterDeg: 0.0,
@@ -119,8 +123,8 @@ export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
     name: 'Ophiuchus',
     abbreviation: 'Oph',
     icon: '⛎',
-    eclipticLongitudeFromDeg: 241.0,
-    eclipticLongitudeToDeg: 259.0,
+    eclipticLongitudeFromDeg: 247.3,
+    eclipticLongitudeToDeg: 266.6,
     raCenterDeg: 253.0,
     decCenterDeg: -0.5,
     latitudeCenterDeg: 0.0,
@@ -130,8 +134,8 @@ export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
     name: 'Sagittarius',
     abbreviation: 'Sgr',
     icon: '♐',
-    eclipticLongitudeFromDeg: 259.0,
-    eclipticLongitudeToDeg: 278.0,
+    eclipticLongitudeFromDeg: 266.6,
+    eclipticLongitudeToDeg: 299.8,
     raCenterDeg: 270.0,
     decCenterDeg: -29.0,
     latitudeCenterDeg: 0.0,
@@ -141,8 +145,8 @@ export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
     name: 'Capricornus',
     abbreviation: 'Cap',
     icon: '♑',
-    eclipticLongitudeFromDeg: 278.0,
-    eclipticLongitudeToDeg: 304.0,
+    eclipticLongitudeFromDeg: 299.8,
+    eclipticLongitudeToDeg: 327.7,
     raCenterDeg: 296.0,
     decCenterDeg: -22.0,
     latitudeCenterDeg: 0.0,
@@ -152,8 +156,8 @@ export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
     name: 'Aquarius',
     abbreviation: 'Aqr',
     icon: '♒',
-    eclipticLongitudeFromDeg: 304.0,
-    eclipticLongitudeToDeg: 333.0,
+    eclipticLongitudeFromDeg: 327.7,
+    eclipticLongitudeToDeg: 351.5,
     raCenterDeg: 324.0,
     decCenterDeg: -13.0,
     latitudeCenterDeg: 0.0,
@@ -163,8 +167,8 @@ export const CONSTELLATION_BOUNDARIES: readonly AstronomicalConstellation[] = [
     name: 'Pisces',
     abbreviation: 'Psc',
     icon: '♓',
-    eclipticLongitudeFromDeg: 333.0,
-    eclipticLongitudeToDeg: 360.0,
+    eclipticLongitudeFromDeg: 351.5,
+    eclipticLongitudeToDeg: 28.5,
     raCenterDeg: 352.0,
     decCenterDeg: 6.0,
     latitudeCenterDeg: 0.0,
@@ -246,10 +250,9 @@ export function isNearBoundary(
 /**
  * Find the IAU constellation containing an ecliptic longitude (0-360°).
  *
- * The stored ranges are a simplified approximation of the official IAU
- * boundary polygons. If a longitude falls inside a small gap between two
- * simplified ranges, the nearest boundary endpoint wins so that every
- * possible longitude resolves to a constellation.
+ * The stored ranges are the standard ecliptic-longitude crossings of the
+ * official IAU boundary lines (accurate to ~0.1°). They tile the full
+ * circle; the nearest-endpoint fallback below is kept only as a safety net.
  */
 export function getConstellationByEclipticLongitude(longitudeDeg: number): {
   constellation: AstronomicalConstellation;

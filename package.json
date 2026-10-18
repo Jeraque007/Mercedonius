@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "tsx --test tests/mercedonius-engine.test.ts",
+    "test": "tsx --test tests/mercedonius-engine.test.ts tests/seasons.test.ts tests/constellations-moon.test.ts",
     "test:smoke": "tsx scripts/smoke-test.ts"
   },
   "dependencies": {

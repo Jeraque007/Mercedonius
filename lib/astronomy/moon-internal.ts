@@ -39,7 +39,10 @@ export function getMoonPhase(date: Date): { phase: string; illumination: number;
 
   const phaseIndex = Math.floor((daysSinceNewMoon / LUNAR_CYCLE_DAYS) * 8) % 8;
 
-  const illumination = 100 * Math.sin((daysSinceNewMoon / LUNAR_CYCLE_DAYS) * Math.PI);
+  // Illumination follows the phase angle: 0% at new, 50% at first/last
+  // quarter, 100% at full. (A sine-of-age curve wrongly gives ~71% at
+  // quarter — that's what previously labelled a 69.9%-lit Moon a "crescent".)
+  const illumination = 50 * (1 - Math.cos((daysSinceNewMoon / LUNAR_CYCLE_DAYS) * 2 * Math.PI));
 
   const PHASES = [
     { name: 'New Moon', icon: '🌑' },
