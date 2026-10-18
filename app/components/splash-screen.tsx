@@ -111,12 +111,40 @@ export function SplashScreen() {
         background: 'radial-gradient(1200px 800px at 50% 20%, rgba(4,7,18,0.4), transparent 60%), radial-gradient(1000px 600px at 80% 80%, rgba(120,80,30,0.25), transparent 60%)',
       }}
     >
+      {/* Visible astrolabe background image */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+          backgroundImage: "url('/background.jpeg')",
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center 45%',
+          backgroundSize: 'cover',
+          opacity: 0.6,
+          filter: 'blur(5px) saturate(1.05)',
+        }}
+      />
+      {/* Vignette scrim — keeps text readable over the astrolabe */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 1,
+          pointerEvents: 'none',
+          background:
+            'radial-gradient(ellipse at 50% 45%, rgba(4,7,18,0.68) 0%, rgba(4,7,18,0.55) 40%, rgba(4,7,18,0.85) 75%, rgba(10,10,18,0.97) 100%)',
+        }}
+      />
       {/* Subtle atmospheric gradient overlay */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           pointerEvents: 'none',
+          zIndex: 2,
           background:
             'radial-gradient(circle at 12% 18%, rgba(255,240,200,0.03), transparent 35%), radial-gradient(circle at 88% 82%, rgba(180,140,80,0.08), transparent 50%)',
         }}
@@ -128,13 +156,13 @@ export function SplashScreen() {
         style={{
           position: 'absolute',
           inset: 0,
-          zIndex: 0,
+          zIndex: 3,
           width: '100%',
           height: '100%',
           display: 'block',
         }}
       />
-      {/* Content � quote at top, button stacked at bottom */}
+      {/* Content — heading, invitation text, welcome button */}
       <div
         className="splash-content"
         style={{
@@ -143,35 +171,59 @@ export function SplashScreen() {
           zIndex: 10,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'flex-start',
+          justifyContent: 'center',
           alignItems: 'center',
           textAlign: 'center',
           padding: '2rem',
-          paddingTop: '4rem',
-          paddingBottom: '4rem',
+          paddingTop: '3rem',
+          paddingBottom: '3rem',
           boxSizing: 'border-box',
+          width: '100%',
+          maxWidth: '820px',
+          margin: '0 auto',
         }}
       >
-        <p
-          className="splash-body"
+        <h1
+          className="heading-gold text-cinzel-900"
+          data-text="MERCEDONIUS"
           style={{
             margin: 0,
-            marginBottom: '2.25rem',
-            fontSize: '1.1rem',
-            color: 'var(--text-secondary)',
-            lineHeight: '1.8',
+            marginBottom: '1.75rem',
+            fontSize: '2.5rem',
+            letterSpacing: '0.2em',
           }}
         >
-          You have been waiting for this evolution for more than 2000 years.
+          MERCEDONIUS
+        </h1>
+        <h2
+          className="splash-title"
+          style={{ fontSize: '1.75rem', marginBottom: '1.5rem' }}
+        >
+          This is by far no ordinary <span className="splash-emphasis">&quot;Calendar&quot;</span>
+        </h2>
+        <p className="splash-body">
+          You have been waiting for this evolution for more than 2000 years. This
+          technology spans lifetimes and dates back to pre-antlantean.
+        </p>
+        <p className="splash-body">
+          There are several versions available, but none as complete and
+          intentionally designed that you could actually merge with your daily
+          life to offer the structure, guidance, and support to bring your
+          integral essence into alignment with what and who you are eternally,
+          spiritually, and cosmically.
+        </p>
+        <p className="splash-invite">
+          You are invited to journey further into this biosphere —{' '}
+          <span className="splash-welcome">&quot;welcome&quot;</span>.
         </p>
         <button
           type="button"
           className="splash-welcome-btn"
           onClick={goWelcome}
           aria-label="Enter the Mercedonius calendar"
-          style={{ marginTop: 'auto', marginBottom: '3rem' }}
+          style={{ textTransform: 'none', marginTop: '0.5rem' }}
         >
-          welcome
+          Welcome
         </button>
       </div>
     </div>

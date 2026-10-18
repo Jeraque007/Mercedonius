@@ -48,30 +48,50 @@ function lambdaDelta(instant: Date, targetDeg: number): number {
 /**
  * First instant strictly after `from` at which λ crosses `targetDeg`
  * (ascending), searched within `windowDays`. Returns null when no crossing
- * lies inside the window (λ moves ≈1°/day, so windows ≤ 180 days are safe
- * from wrap ambiguity).
+ * lies inside the window.
+ *
+ * λ advances ≈0.986°/day, so the crossing is first ESTIMATED from the
+ * forward angular offset to the target, then bisected over a ±15-day
+ * neighbourhood of that estimate (≈±15° — far inside the ±180° wrap-free
+ * range). NOTE: a naive full-window end check cannot work for windows ≥
+ * 1 year — λ wraps back to its starting sign by the window's end, which
+ * silently returned null for every seasonal instant.
  */
 export function findSolarLongitudeCrossing(
   targetDeg: number,
   from: Date,
   windowDays: number
 ): Date | null {
-  const windowMs = windowDays * 86400000;
-  const t0 = from.getTime();
-  const t1 = t0 + windowMs;
-  const d0 = lambdaDelta(new Date(t0), targetDeg);
-  const d1 = lambdaDelta(new Date(t1), targetDeg);
-  if (d0 >= 0 || d1 < 0) return null; // crossing already passed / not yet reached
+  const DAY_MS = 86400000;
+  const fromMs = from.getTime();
 
-  // Bisect: λ increases monotonically over the window ⇒ delta crosses zero once.
-  let lo = t0;
-  let hi = t1;
-  for (let i = 0; i < 40 && hi - lo > 250; i++) {
-    const mid = (lo + hi) / 2;
-    if (lambdaDelta(new Date(mid), targetDeg) < 0) lo = mid;
-    else hi = mid;
+  // Forward angular offset to the target (0 ≤ offset < 360).
+  const offsetDeg = normalizeDegrees(targetDeg - getSunEclipticPosition(from).longitudeDeg);
+
+  // Rough arrival estimate at the mean solar rate (0.9856°/day); the real
+  // rate deviates by at most a few days over half an orbit.
+  const estimateMs = fromMs + (offsetDeg / 0.9856) * DAY_MS;
+
+  // ±15-day search window around the estimate, clamped to [from, from+window].
+  const lo = Math.max(fromMs, estimateMs - 15 * DAY_MS);
+  const hi = Math.min(estimateMs + 15 * DAY_MS, fromMs + windowDays * DAY_MS);
+  if (hi <= lo) return null; // estimate lies outside the allowed window
+
+  // Require a sign change inside the window; otherwise the crossing has
+  // already passed (d0 ≥ 0) or is not reached within windowDays (d1 < 0).
+  let low = lo;
+  let high = hi;
+  const d0 = lambdaDelta(new Date(low), targetDeg);
+  const d1 = lambdaDelta(new Date(high), targetDeg);
+  if (d0 >= 0 || d1 < 0) return null;
+
+  // Bisect: λ increases monotonically ⇒ delta crosses zero once.
+  for (let i = 0; i < 40 && high - low > 250; i++) {
+    const mid = (low + high) / 2;
+    if (lambdaDelta(new Date(mid), targetDeg) < 0) low = mid;
+    else high = mid;
   }
-  return new Date((lo + hi) / 2);
+  return new Date((low + high) / 2);
 }
 
 const SEASONAL_CACHE = new Map<number, SeasonalInstant[]>();

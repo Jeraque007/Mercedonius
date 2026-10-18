@@ -1,10 +1,22 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MonthGrid } from '../components/month-grid';
 import { WeekdayReferenceSection } from '../components/weekday-reference';
 import { SundialDisplay } from '../components/sundial-display';
+import { EventCountdown } from '../components/event-countdown';
+import { ComparisonPanel } from '../components/comparison-panel';
+import { ProvenanceLegend } from '../components/provenance-badge';
+import { getNextEvent } from '@lib/events';
+import {
+  getSunConstellation,
+  getMoonIconForDate,
+  getMoonNameForDate,
+  getMoonIlluminationForDate,
+  getCalendarDayWithAstronomy,
+} from '@lib/calendar-service';
+import { getWeekdayReferenceForDate, PLANET_GLYPHS } from '@data/astrology';
 import {
   convertGregorianTo13Month,
   getMercedoniusMonthLabel,
@@ -29,6 +41,38 @@ export default function CalendarPage(): JSX.Element {
 
   const showMercedonius = viewMode === 'dual' || viewMode === 'mercedonius';
   const showGregorian = viewMode === 'dual' || viewMode === 'gregorian';
+
+  // ---- Day dashboard (restored top info section) ----
+  // Live clock: ticking "now" drives the countdown; timezone resolved after
+  // mount so server prerender and client hydration agree.
+  const [now, setNow] = useState<Date | null>(null);
+  const [timeZone, setTimeZone] = useState('UTC');
+  useEffect(() => {
+    setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const nextEvent = useMemo(() => (now ? getNextEvent(now) : null), [now]);
+
+  // Per-selected-date derived values (memoized, potentially heavier math).
+  const dayAstronomy = useMemo(() => getCalendarDayWithAstronomy(selectedDate), [selectedDate]);
+  const sunConst = useMemo(() => getSunConstellation(selectedDate), [selectedDate]);
+  const planetaryDay = useMemo(() => getWeekdayReferenceForDate(selectedDate), [selectedDate]);
+  const eclipseEvent = useMemo(
+    () =>
+      dayAstronomy.astronomicalEvents.find(
+        (e) => e.type === 'solar_eclipse' || e.type === 'lunar_eclipse'
+      ) ?? null,
+    [dayAstronomy]
+  );
+  const dayEvent = useMemo(
+    () =>
+      dayAstronomy.astronomicalEvents.find(
+        (e) => e.type !== 'solar_eclipse' && e.type !== 'lunar_eclipse'
+      ) ?? null,
+    [dayAstronomy]
+  );
 
   return (
     <div className="calendar-page page-container" style={{ padding: '1.5rem', maxWidth: 1200, margin: '0 auto', minHeight: '100vh', color: '#e2e8f0' }}>
@@ -77,6 +121,63 @@ export default function CalendarPage(): JSX.Element {
           {gregorianLabel} · {mercedoniusLabel}
         </p>
       </header>
+
+      {/* Restored day dashboard: info cards, live countdown, data sources, compare systems */}
+      <section style={{ marginBottom: '2rem' }}>
+        <div className="date-details">
+          <div className="detail-item">
+            <label>Mercedonius:</label>
+            <span>
+              {getMercedoniusMonthLabel(mercedonius.month === 0 ? 13 : mercedonius.month)}{' '}
+              {mercedonius.day}
+            </span>
+          </div>
+          <div className="detail-item">
+            <label>Day:</label>
+            <span>{dayAstronomy.dayOfWeek}</span>
+          </div>
+          <div className="detail-item">
+            <label>Planetary Day:</label>
+            <span>
+              {PLANET_GLYPHS[planetaryDay.planet]} {planetaryDay.planet} · {planetaryDay.dies}
+            </span>
+          </div>
+          <div className="detail-item">
+            <label>Sun Constellation:</label>
+            <span>
+              {sunConst.constellation.icon} {sunConst.constellation.name}
+            </span>
+          </div>
+          <div className="detail-item">
+            <label>Moon:</label>
+            <span>
+              {getMoonIconForDate(selectedDate)} {getMoonNameForDate(selectedDate)}
+            </span>
+          </div>
+          <div className="detail-item">
+            <label>Illumination:</label>
+            <span>{getMoonIlluminationForDate(selectedDate).toFixed(1)}%</span>
+          </div>
+          <div className="detail-item">
+            <label>Eclipse:</label>
+            <span>
+              {eclipseEvent ? `${eclipseEvent.icon} ${eclipseEvent.label}` : 'None'}
+            </span>
+          </div>
+          <div className="detail-item">
+            <label>Astronomical Event:</label>
+            <span>{dayEvent ? `${dayEvent.icon} ${dayEvent.label}` : 'None'}</span>
+          </div>
+        </div>
+
+        {now && (
+          <EventCountdown event={nextEvent} now={now} timeZone={timeZone} hour12={true} />
+        )}
+
+        <ProvenanceLegend />
+
+        <ComparisonPanel selectedDate={selectedDate} />
+      </section>
 
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ margin: '0 0 0.75rem', color: '#e2e8f0', fontSize: '1.125rem' }}>Calendar Mode</h2>
@@ -164,9 +265,9 @@ export default function CalendarPage(): JSX.Element {
         <WeekdayReferenceSection currentDate={selectedDate} />
       </section>
 
-      {/* Transparent-background sundial dial with golden neon buttons */}
-      <section className="sundial-dial-page" style={{ position: 'relative', width: '100%', maxWidth: 1200, margin: '0 auto', padding: '1rem', overflow: 'hidden' }}>
-        <SundialDisplay selectedDate={selectedDate} />
+      {/* Sundial hub — 8 rim buttons + live data over the central triangle */}
+      <section style={{ position: 'relative', width: '100%', maxWidth: 700, margin: '0 auto', padding: '1rem' }}>
+        <SundialDisplay selectedDate={selectedDate} viewMode={viewMode} />
       </section>
 
       {/* Full-image modal — actual artwork, not cropped, not illustrative */}
