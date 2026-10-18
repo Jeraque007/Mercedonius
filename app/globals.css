@@ -1,3 +1,7 @@
+/* Playfair Display — high-contrast display serif used for page titles
+   (readable at large sizes where Cinzel's inscriptional caps were not). */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap');
+
 /* Astronomical Calendar Theme */
 :root {
   --bg-primary: #0a0a12;
@@ -1004,10 +1008,10 @@ body {
 }
 
 .dial-panel-head {
-  font-family: 'Cinzel', Georgia, 'Times New Roman', serif;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   color: #fbbf24;
   font-size: clamp(0.68rem, 2.4vw, 1rem);
   text-align: center;
@@ -1227,7 +1231,7 @@ body {
     radial-gradient(1.5px 1.5px at 130px 230px, rgba(255,255,255,0.75), rgba(255,255,255,0) 1.5px);
   background-repeat: repeat;
   background-size: 200px 200px;
-  opacity: 0.9;
+  opacity: 0.65;
 }
 
 /* Moon-phase orbs — soft golden/white circles echoing the celestial theme */
@@ -1244,19 +1248,19 @@ body {
     radial-gradient(circle at 58% 22%, rgba(212, 175, 55, 0.14) 0%, transparent 7%);
   background-repeat: repeat;
   background-size: 220px 220px;
-  opacity: 0.85;
+  opacity: 0.6;
 }
 
-/* Page containers — translucent so the celestial background shows through.
-   Cards/panels carry their own solid fills, so only the gaps reveal stars. */
+/* Page containers — translucent so the celestial background shows through
+   on every page, while keeping text comfortably readable. */
 .page-container {
-  background: rgba(10, 10, 18, 0.55) !important;
+  background: rgba(10, 10, 18, 0.68) !important;
   backdrop-filter: blur(2px);
 }
 
-/* Splash screen — translucent so background is visible */
+/* Splash screen — same background carries through, dimmed for legibility */
 .splash-screen {
-  background: rgba(10, 10, 18, 0.62) !important;
+  background: rgba(10, 10, 18, 0.78) !important;
 }
 
 .splash-welcome-btn {

@@ -61,10 +61,10 @@ export default function ZodiacRingPage(): JSX.Element {
             background: 'linear-gradient(to bottom, #FFF8DC 0%, #F6DC9A 45%, #E3AC55 75%, #C68A2E 100%)',
             textShadow:
               '0 0 calc(1.75rem * 0.38) rgba(255, 196, 96, 0.65), 0 0 calc(1.75rem * 0.38) rgba(255, 196, 96, 0.35)',
-            WebkitTextStroke: 'calc(1.75rem * 0.13) rgba(7, 11, 26, 0.92)',
-            letterSpacing: '0.20em',
+            WebkitTextStroke: 'calc(1.75rem * 0.07) rgba(7, 11, 26, 0.92)',
+            letterSpacing: '0.06em',
             textAlign: 'center',
-            fontFamily: "'Cinzel', Georgia, 'Times New Roman', serif",
+            fontFamily: "'Playfair Display', Georgia, 'Times New Roman', serif",
             fontWeight: 900,
           }}
         >
