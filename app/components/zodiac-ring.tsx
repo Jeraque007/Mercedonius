@@ -65,7 +65,10 @@ export const ZodiacRing = memo(function ZodiacRing({
   );
 
   const effectiveFocus = focusedName ?? sunConstellation.name;
-  const focusedBand = bands.find((b) => b.name === effectiveFocus) ?? null;
+  // Centre "focused" copy only when the user actually picked a section —
+  // otherwise the Sun's constellation is the (unfocused) default focus.
+  const focusedBand =
+    focusedName != null ? bands.find((b) => b.name === focusedName) ?? null : null;
   const [markerX, markerY] = polar(R, sunLongitudeDeg);
 
   return (

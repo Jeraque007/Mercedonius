@@ -30,6 +30,10 @@ export default function CalendarPage(): JSX.Element {
   const [viewMode, setViewMode] = useState<ViewMode>('dual');
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [expandedImage, setExpandedImage] = useState<{ src: string; alt: string } | null>(null);
+  // Details-section filter: mirrors the date card between the 13-month and
+  // Gregorian calendars. Independent from the month-grid `viewMode` below —
+  // flipping it never changes the grid layout.
+  const [detailsView, setDetailsView] = useState<'mercedonius' | 'gregorian'>('mercedonius');
 
   const mercedonius = useMemo(() => convertGregorianTo13Month(selectedDate), [selectedDate]);
   const mercedoniusLabel = `${getMercedoniusMonthLabel(mercedonius.month === 0 ? 13 : mercedonius.month)} ${mercedonius.day}, ${mercedonius.year}`;
@@ -124,14 +128,74 @@ export default function CalendarPage(): JSX.Element {
 
       {/* Restored day dashboard: info cards, live countdown, data sources, compare systems */}
       <section style={{ marginBottom: '2rem' }}>
-        <div className="date-details">
-          <div className="detail-item">
-            <label>Mercedonius:</label>
-            <span>
-              {getMercedoniusMonthLabel(mercedonius.month === 0 ? 13 : mercedonius.month)}{' '}
-              {mercedonius.day}
-            </span>
+        {/* Date-details filter: mirror the date card between calendars. */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            gap: '0.5rem',
+            marginBottom: '0.5rem',
+          }}
+        >
+          <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8' }}>
+            Date details
+          </span>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            <button
+              type="button"
+              onClick={() => setDetailsView('mercedonius')}
+              className={`mode-btn ${detailsView === 'mercedonius' ? 'active' : ''}`}
+              aria-pressed={detailsView === 'mercedonius'}
+              style={{
+                padding: '0.3rem 0.8rem',
+                background: detailsView === 'mercedonius' ? '#fbbf24' : '#1e293b',
+                color: detailsView === 'mercedonius' ? '#0f172a' : '#e2e8f0',
+                border: '1px solid #475569',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: detailsView === 'mercedonius' ? 700 : 400,
+                fontSize: '0.8rem',
+              }}
+            >
+              13-Month
+            </button>
+            <button
+              type="button"
+              onClick={() => setDetailsView('gregorian')}
+              className={`mode-btn ${detailsView === 'gregorian' ? 'active' : ''}`}
+              aria-pressed={detailsView === 'gregorian'}
+              style={{
+                padding: '0.3rem 0.8rem',
+                background: detailsView === 'gregorian' ? '#fbbf24' : '#1e293b',
+                color: detailsView === 'gregorian' ? '#0f172a' : '#e2e8f0',
+                border: '1px solid #475569',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: detailsView === 'gregorian' ? 700 : 400,
+                fontSize: '0.8rem',
+              }}
+            >
+              Gregorian
+            </button>
           </div>
+        </div>
+
+        <div className="date-details">
+          {detailsView === 'mercedonius' ? (
+            <div className="detail-item">
+              <label>Mercedonius:</label>
+              <span>
+                {getMercedoniusMonthLabel(mercedonius.month === 0 ? 13 : mercedonius.month)}{' '}
+                {mercedonius.day}
+              </span>
+            </div>
+          ) : (
+            <div className="detail-item">
+              <label>Gregorian:</label>
+              <span>{gregorianLabel}</span>
+            </div>
+          )}
           <div className="detail-item">
             <label>Day:</label>
             <span>{dayAstronomy.dayOfWeek}</span>
@@ -267,7 +331,7 @@ export default function CalendarPage(): JSX.Element {
 
       {/* Sundial hub — 8 rim buttons + live data over the central triangle */}
       <section style={{ position: 'relative', width: '100%', maxWidth: 700, margin: '0 auto', padding: '1rem' }}>
-        <SundialDisplay selectedDate={selectedDate} viewMode={viewMode} />
+        <SundialDisplay selectedDate={selectedDate} viewMode={viewMode} timeZone={timeZone} />
       </section>
 
       {/* Full-image modal — actual artwork, not cropped, not illustrative */}

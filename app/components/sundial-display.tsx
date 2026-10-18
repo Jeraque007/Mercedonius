@@ -25,7 +25,14 @@ import {
   getEclipsesForYear,
 } from '@lib/calendar-service';
 import { getWeekdayReferenceForDate, PLANET_GLYPHS } from '@data/astrology';
-import { getSeasonalInstants, formatUtcInstant, type SeasonalInstant } from '@lib/astronomy/seasons';
+import {
+  getSeasonalInstants,
+  formatUtcInstant,
+  seasonForHemisphere,
+  seasonalDisplayForHemisphere,
+  isLikelySouthernTimeZone,
+  type SeasonalInstant,
+} from '@lib/astronomy/seasons';
 
 /** Calendar page view mode (which grid the user is viewing). */
 export type SundialViewMode = 'dual' | 'mercedonius' | 'gregorian';
@@ -37,30 +44,38 @@ interface DialButton {
   label: string;
   /** Angle clockwise from top (12 o'clock), matching the baked rim labels */
   angleDeg: number;
+  /** Radial position of the label, as a percentage of the dial (centre = 50%) */
+  radiusPct: number;
   /** Upright rotation of the hotspot pill to follow the rim text */
   rotDeg: number;
 }
 
-/** Rim buttons exactly as illustrated on sundial-labels.png (8 × 45°). */
+/**
+ * Rim buttons calibrated to sundial-labels.png (550×550). The label band is
+ * hand-drawn — NOT a perfect circle at exact 45° steps — so each button uses
+ * the PIXEL-MEASURED centroid (angle + radius) of its baked label word: the
+ * bright gold-text centroid within r 180–232 px around each nominal angle.
+ * Measured: Frequency 0.1°/38.27%, Calendar 43.5°/37.45%, Planetary 88.8°/38.27%,
+ * Lunar 136.7°/38.36%, Zodiac 180.7°/38.36%, Seasonal 223.0°/37.91%,
+ * Eclipse 269.4°/36.91%, Chakra 314.1°/37.36%.
+ * rotDeg keeps each pill within ±90° of tangent: a≤90→a, 90<a≤270→a−180, a>270→a−360.
+ */
 const DIAL_BUTTONS: DialButton[] = [
-  { id: 'frequency', icon: '🎵', label: 'Frequency', angleDeg: 0, rotDeg: 0 },
-  { id: 'calendar', icon: '📅', label: 'Calendar', angleDeg: 45, rotDeg: 45 },
-  { id: 'planetary', icon: '🪐', label: 'Planetary', angleDeg: 90, rotDeg: 90 },
-  { id: 'lunar', icon: '🌙', label: 'Lunar', angleDeg: 135, rotDeg: -45 },
-  { id: 'zodiac', icon: '♈', label: 'Zodiac', angleDeg: 180, rotDeg: 0 },
-  { id: 'seasonal', icon: '🌿', label: 'Seasonal', angleDeg: 225, rotDeg: 45 },
-  { id: 'eclipse', icon: '🌑', label: 'Eclipse', angleDeg: 270, rotDeg: -90 },
-  { id: 'chakra', icon: '🔯', label: 'Chakra', angleDeg: 315, rotDeg: -45 },
+  { id: 'frequency', icon: '🎵', label: 'Frequency', angleDeg: 0.1, radiusPct: 38.27, rotDeg: 0.1 },
+  { id: 'calendar', icon: '📅', label: 'Calendar', angleDeg: 43.5, radiusPct: 37.45, rotDeg: 43.5 },
+  { id: 'planetary', icon: '🪐', label: 'Planetary', angleDeg: 88.8, radiusPct: 38.27, rotDeg: 88.8 },
+  { id: 'lunar', icon: '🌙', label: 'Lunar', angleDeg: 136.7, radiusPct: 38.36, rotDeg: -43.3 },
+  { id: 'zodiac', icon: '♈', label: 'Zodiac', angleDeg: 180.7, radiusPct: 38.36, rotDeg: 0.7 },
+  { id: 'seasonal', icon: '🌿', label: 'Seasonal', angleDeg: 223.0, radiusPct: 37.91, rotDeg: 43.0 },
+  { id: 'eclipse', icon: '🌑', label: 'Eclipse', angleDeg: 269.4, radiusPct: 36.91, rotDeg: -90.6 },
+  { id: 'chakra', icon: '🔯', label: 'Chakra', angleDeg: 314.1, radiusPct: 37.36, rotDeg: -45.9 },
 ];
 
-/** Radius of the label band, as a percentage of the dial (center = 50%). */
-const RADIUS_PCT = 38.5;
-
-function rimPosition(angleDeg: number): { left: string; top: string } {
-  const rad = (angleDeg * Math.PI) / 180;
+function rimPosition(btn: Pick<DialButton, 'angleDeg' | 'radiusPct'>): { left: string; top: string } {
+  const rad = (btn.angleDeg * Math.PI) / 180;
   return {
-    left: `${(50 + RADIUS_PCT * Math.sin(rad)).toFixed(2)}%`,
-    top: `${(50 - RADIUS_PCT * Math.cos(rad)).toFixed(2)}%`,
+    left: `${(50 + btn.radiusPct * Math.sin(rad)).toFixed(2)}%`,
+    top: `${(50 - btn.radiusPct * Math.cos(rad)).toFixed(2)}%`,
   };
 }
 
@@ -76,10 +91,25 @@ interface SundialDisplayProps {
   selectedDate: Date;
   /** Current calendar-page view mode — drives the CALENDAR panel. */
   viewMode: SundialViewMode;
+  /**
+   * Observer latitude (degrees, south negative). When known it decides the
+   * season hemisphere; otherwise timeZone (IANA) is used as a heuristic.
+   */
+  latitude?: number | null;
+  /** IANA time zone of the observer (browser zone once resolved post-mount). */
+  timeZone?: string | null;
 }
 
-export function SundialDisplay({ selectedDate, viewMode }: SundialDisplayProps) {
+export function SundialDisplay({ selectedDate, viewMode, latitude = null, timeZone = null }: SundialDisplayProps) {
   const [activeSection, setActiveSection] = useState<string>('calendar');
+
+  // Seasons are hemisphere-dependent: the engine computes astronomical
+  // (northern-convention) instants; south of the equator the NAMES flip
+  // (March equinox opens autumn, December solstice is summer, …) while the
+  // instants stay identical. A known latitude wins; otherwise the observer's
+  // IANA time zone is used as a curated heuristic.
+  const isSouthernHemisphere =
+    latitude != null ? latitude < 0 : timeZone != null ? isLikelySouthernTimeZone(timeZone) : false;
 
   // ── Live, engine-derived data for the selected date ──────────────────────
   const dayAstronomy = useMemo(() => getCalendarDayWithAstronomy(selectedDate), [selectedDate]);
@@ -116,7 +146,17 @@ export function SundialDisplay({ selectedDate, viewMode }: SundialDisplayProps) 
     const gregLabel = formatDateForDisplay(selectedDate);
     const sunConst = dayAstronomy.sunConstellation;
     const sunConstText = `${sunConst.icon} ${sunConst.name}${sunConst.isNearBoundary ? ' (near boundary)' : ''}`;
-    const seasonText = seasonInfo.last ? seasonInfo.last.season : '—';
+    // Season names follow the OBSERVER'S hemisphere (engine computes the
+    // astronomical instants once; a southern observer sees them flipped).
+    const seasonText = seasonInfo.last
+      ? seasonForHemisphere(seasonInfo.last.season, isSouthernHemisphere)
+      : '—';
+    const lastSeasonal = seasonInfo.last
+      ? seasonalDisplayForHemisphere(seasonInfo.last, isSouthernHemisphere)
+      : null;
+    const nextSeasonal = seasonInfo.next
+      ? seasonalDisplayForHemisphere(seasonInfo.next, isSouthernHemisphere)
+      : null;
     const glyph = PLANET_GLYPHS[planetaryDay.planet] ?? '';
 
     // CALENDAR reflects WHAT THE USER IS VIEWING (Dual / 13-Month / Gregorian).
@@ -210,17 +250,20 @@ export function SundialDisplay({ selectedDate, viewMode }: SundialDisplayProps) 
         rows: [
           [
             'Last',
-            seasonInfo.last
-              ? `${seasonInfo.last.icon} ${seasonInfo.last.label} · ${formatUtcInstant(seasonInfo.last.instant)}`
+            seasonInfo.last && lastSeasonal
+              ? `${seasonInfo.last.icon} ${lastSeasonal.label} · ${formatUtcInstant(seasonInfo.last.instant)}`
               : '—',
           ],
           [
             'Next',
-            seasonInfo.next
-              ? `${seasonInfo.next.icon} ${seasonInfo.next.label} · ${formatUtcInstant(seasonInfo.next.instant)}`
+            seasonInfo.next && nextSeasonal
+              ? `${seasonInfo.next.icon} ${nextSeasonal.label} · ${formatUtcInstant(seasonInfo.next.instant)}`
               : '—',
           ],
         ],
+        note: isSouthernHemisphere
+          ? 'Southern Hemisphere — equinox/solstice names flipped for local seasons; instants identical.'
+          : undefined,
       },
       eclipse: {
         icon: '🌑',
@@ -238,7 +281,7 @@ export function SundialDisplay({ selectedDate, viewMode }: SundialDisplayProps) 
         note: '⚠ Illustrative candidates — not real eclipse predictions.',
       },
     };
-  }, [selectedDate, viewMode, dayAstronomy, planetaryDay, traditionalSign, seasonInfo, eclipseCandidates]);
+  }, [selectedDate, viewMode, latitude, timeZone, isSouthernHemisphere, dayAstronomy, planetaryDay, traditionalSign, seasonInfo, eclipseCandidates]);
 
   const panel = panels[activeSection];
 
@@ -253,7 +296,7 @@ export function SundialDisplay({ selectedDate, viewMode }: SundialDisplayProps) 
 
       {/* Invisible live hotspots exactly over the baked rim labels */}
       {DIAL_BUTTONS.map((btn) => {
-        const pos = rimPosition(btn.angleDeg);
+        const pos = rimPosition(btn);
         return (
           <button
             key={btn.id}

@@ -15,6 +15,9 @@ interface ZodiacRingPageProps {}
 export default function ZodiacRingPage(): JSX.Element {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  // Ring navigation state: which constellation section the user has focused
+  // (null → centre follows the Sun's constellation on the selected date).
+  const [focusedName, setFocusedName] = useState<string | null>(null);
 
   const dayAstronomy = useMemo(() => getCalendarDayWithAstronomy(selectedDate), [selectedDate]);
   const mercedonius = convertGregorianTo13Month(selectedDate);
@@ -86,8 +89,8 @@ export default function ZodiacRingPage(): JSX.Element {
         mercedoniusLabel={mercedoniusLabel}
         sunConstellation={dayAstronomy.sunConstellation}
         sunLongitudeDeg={dayAstronomy.sun.eclipticLongitudeDeg}
-        focusedName={null}
-        onFocusChange={() => {}}
+        focusedName={focusedName}
+        onFocusChange={setFocusedName}
       />
     </div>
   );
