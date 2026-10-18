@@ -19,11 +19,17 @@ import {
 import { getWeekdayReferenceForDate, PLANET_GLYPHS } from '@data/astrology';
 import {
   convertGregorianTo13Month,
+  getDayOfWeek,
   getMercedoniusMonthLabel,
   formatDateForDisplay,
 } from '@lib/date-utils';
 
 export type ViewMode = 'dual' | 'mercedonius' | 'gregorian';
+
+/** Latin weekday short names (Sunday-first), used in Mercedonius view */
+const LATIN_WEEKDAY_SHORT = ['Sol', 'Lun', 'Mar', 'Mer', 'Iov', 'Ven', 'Sat'];
+/** English weekday short names (Sunday-first), used in Gregorian view */
+const ENGLISH_WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function CalendarPage(): JSX.Element {
   const router = useRouter();
@@ -38,6 +44,9 @@ export default function CalendarPage(): JSX.Element {
   const mercedonius = useMemo(() => convertGregorianTo13Month(selectedDate), [selectedDate]);
   const mercedoniusLabel = `${getMercedoniusMonthLabel(mercedonius.month === 0 ? 13 : mercedonius.month)} ${mercedonius.day}, ${mercedonius.year}`;
   const gregorianLabel = formatDateForDisplay(selectedDate);
+  // Weekday index (0=Sunday … 6=Saturday) for the selected instant — drives the
+  // Day / Planetary Day mirror between Mercedonius and Gregorian detail views.
+  const dowIndex = getDayOfWeek(selectedDate);
 
   const goBack = () => router.push('/my-sky');
   const goNext = () => router.push('/zodiac-ring');
@@ -182,30 +191,41 @@ export default function CalendarPage(): JSX.Element {
         </div>
 
         <div className="date-details">
-          {detailsView === 'mercedonius' ? (
-            <div className="detail-item">
-              <label>Mercedonius:</label>
-              <span>
-                {getMercedoniusMonthLabel(mercedonius.month === 0 ? 13 : mercedonius.month)}{' '}
-                {mercedonius.day}
-              </span>
-            </div>
-          ) : (
-            <div className="detail-item">
-              <label>Gregorian:</label>
-              <span>{gregorianLabel}</span>
-            </div>
-          )}
+          {/* Date — Mercedonius or Gregorian */}
+          <div className="detail-item">
+            <label>
+              {detailsView === 'mercedonius' ? 'Mercedonius:' : 'Gregorian:'}
+            </label>
+            <span>
+              {detailsView === 'mercedonius'
+                ? `${getMercedoniusMonthLabel(
+                    mercedonius.month === 0 ? 13 : mercedonius.month
+                  )} ${mercedonius.day}`
+                : gregorianLabel}
+            </span>
+          </div>
+
+          {/* Day of week — Latin short (Mercedonius) vs English short (Gregorian) */}
           <div className="detail-item">
             <label>Day:</label>
-            <span>{dayAstronomy.dayOfWeek}</span>
+            <span>
+              {detailsView === 'mercedonius'
+                ? LATIN_WEEKDAY_SHORT[dowIndex]
+                : ENGLISH_WEEKDAY_SHORT[dowIndex]}
+            </span>
           </div>
+
+          {/* Planetary Day — Latin dies (Mercedonius) vs English day name (Gregorian) */}
           <div className="detail-item">
             <label>Planetary Day:</label>
             <span>
-              {PLANET_GLYPHS[planetaryDay.planet]} {planetaryDay.planet} · {planetaryDay.dies}
+              {detailsView === 'mercedonius'
+                ? `${PLANET_GLYPHS[planetaryDay.planet]} ${planetaryDay.planet} · ${planetaryDay.dies}`
+                : `${PLANET_GLYPHS[planetaryDay.planet]} ${planetaryDay.planet} · ${planetaryDay.day}`}
             </span>
           </div>
+
+          {/* Astronomy — instant-based data, identical in both calendar views */}
           <div className="detail-item">
             <label>Sun Constellation:</label>
             <span>
