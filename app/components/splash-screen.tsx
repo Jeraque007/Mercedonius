@@ -118,7 +118,7 @@ export function SplashScreen() {
           position: 'absolute',
           inset: 0,
           zIndex: 0,
-          backgroundImage: "url('/background.jpeg')",
+          backgroundImage: "url('/background.png')",
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center 45%',
           backgroundSize: 'cover',
