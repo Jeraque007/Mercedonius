@@ -286,12 +286,12 @@ export function SplashScreen() {
                 transition: 'all 0.3s ease',
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255,255,255,0.2)';
-                e.target.style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
+                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.2)';
+                (e.target as HTMLButtonElement).style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255,255,255,0.1)';
-                e.target.style.boxShadow = 'none';
+                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)';
+                (e.target as HTMLButtonElement).style.boxShadow = 'none';
               }}
             >
               Visa
@@ -312,12 +312,12 @@ export function SplashScreen() {
                 transition: 'all 0.3s ease',
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255,255,255,0.2)';
-                e.target.style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
+                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.2)';
+                (e.target as HTMLButtonElement).style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255,255,255,0.1)';
-                e.target.style.boxShadow = 'none';
+                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)';
+                (e.target as HTMLButtonElement).style.boxShadow = 'none';
               }}
             >
               Mastercard
@@ -338,12 +338,12 @@ export function SplashScreen() {
                 transition: 'all 0.3s ease',
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255,255,255,0.2)';
-                e.target.style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
+                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.2)';
+                (e.target as HTMLButtonElement).style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255,255,255,0.1)';
-                e.target.style.boxShadow = 'none';
+                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)';
+                (e.target as HTMLButtonElement).style.boxShadow = 'none';
               }}
             >
               Amex
@@ -364,12 +364,12 @@ export function SplashScreen() {
                 transition: 'all 0.3s ease',
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255,255,255,0.2)';
-                e.target.style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
+                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.2)';
+                (e.target as HTMLButtonElement).style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255,255,255,0.1)';
-                e.target.style.boxShadow = 'none';
+                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)';
+                (e.target as HTMLButtonElement).style.boxShadow = 'none';
               }}
             >
               PayPal
