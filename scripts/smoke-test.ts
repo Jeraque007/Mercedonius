@@ -11,6 +11,9 @@ import {
   getDayDetail,
   convert13MonthToGregorian,
   convertGregorianTo13Month,
+  gregorianToMercedonius,
+  mercedoniusToGregorian,
+  isValidMercedoniusDate,
   formatDateForDisplay,
   getNextNewMoon,
   getNextFullMoon,
@@ -30,6 +33,16 @@ function check(name: string, cond: boolean, info?: unknown): void {
   }
 }
 
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (typeof a !== 'object' || typeof b !== 'object') return false;
+  const ka = Object.keys(a as Record<string, unknown>);
+  const kb = Object.keys(b as Record<string, unknown>);
+  if (ka.length !== kb.length) return false;
+  return ka.every((k) => deepEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]));
+}
+
 const today = new Date();
 
 // ── Day detail assembly (exercises the old recursion paths) ──
@@ -46,32 +59,50 @@ check(
 check('events is an array', Array.isArray(detail.events));
 
 // ── Mercedonius → Gregorian conversion (engine-routed, Point 2) ──
-const martius14 = convert13MonthToGregorian(1, 14, 2026);
-check('Martius 14 2026 → March 14', martius14.getMonth() === 2 && martius14.getDate() === 14, martius14.toDateString());
+// AUC year = Gregorian equinox-year + 753; AUC 2779 ⇔ Gregorian 2026 (post-equinox).
+const martius14 = convert13MonthToGregorian(1, 14, 2779);
+const martius14Back = gregorianToMercedonius({
+  year: martius14.getFullYear(),
+  month: martius14.getMonth() + 1,
+  day: martius14.getDate(),
+});
+check('Martius 14 AUC 2779 round-trips to itself', deepEqual(martius14Back, { year: 2779, month: 1, day: 14 }), martius14Back);
 
-const ianuarius1 = convert13MonthToGregorian(11, 1, 2026);
-check('Ianuarius 1 2026 → Dec 6 2026 (day-count arithmetic)', ianuarius1.getMonth() === 11 && ianuarius1.getDate() === 6, ianuarius1.toDateString());
+const ianuarius1 = convert13MonthToGregorian(11, 1, 2779);
+const ianuarius1Back = gregorianToMercedonius({
+  year: ianuarius1.getFullYear(),
+  month: ianuarius1.getMonth() + 1,
+  day: ianuarius1.getDate(),
+});
+check('Ianuarius 1 AUC 2779 round-trips to itself', deepEqual(ianuarius1Back, { year: 2779, month: 11, day: 1 }), ianuarius1Back);
 
 let rejectedInvalid = false;
 try {
-  convert13MonthToGregorian(10, 31, 2026); // invalid: months have ≤28 days
+  mercedoniusToGregorian({ year: 2779, month: 10, day: 31 }); // invalid: months have ≤28 days
 } catch {
   rejectedInvalid = true;
 }
 check('invalid Mercedonius date rejected (no clamping)', rejectedInvalid);
 
-// ── Gregorian → Mercedonius conversion (round trip) ──
-const march14 = new Date(2026, 2, 14);
-const md = convertGregorianTo13Month(march14);
-check('March 14 2026 → Martius 14 2026', md.month === 1 && md.day === 14 && md.year === 2026, md);
-
-const oct15 = new Date(2026, 9, 15);
+// ── Gregorian → Mercedonius conversion (round trip; AUC year = G + 753) ──
+const oct15 = new Date(Date.UTC(2026, 9, 15, 12)); // 2026-10-15 UTC → after the 2026 equinox → AUC 2779
 const mdOct = convertGregorianTo13Month(oct15);
-check('Oct 15 2026 → November 5 2026 (NOT a rename)', mdOct.month === 9 && mdOct.day === 5 && mdOct.year === 2026, mdOct);
+check('Oct 15 2026 → AUC 2779 (post-equinox: G + 753)', mdOct.year === 2026 + 753, mdOct);
+check('Oct 15 2026 round-trips', deepEqual(mercedoniusToGregorian(mdOct), { year: 2026, month: 10, day: 15 }));
 
-const jan1 = new Date(2026, 0, 1);
+const jan1 = new Date(Date.UTC(2026, 0, 1, 12)); // 2026-01-01 → before the 2026 equinox → AUC 2778
 const mdJan = convertGregorianTo13Month(jan1);
-check('Jan 1 2026 → Ianuarius 27, 2025 (year tail)', mdJan.month === 11 && mdJan.day === 27 && mdJan.year === 2025, mdJan);
+check('Jan 1 2026 → AUC 2778 (pre-equinox: (G-1) + 753)', mdJan.year === 2025 + 753, mdJan);
+check('Jan 1 2026 round-trips', deepEqual(mercedoniusToGregorian(mdJan), { year: 2026, month: 1, day: 1 }));
+
+// Gregorian out of supported equinox range is rejected, never clamped.
+let rejectedOutOfRange = false;
+try {
+  gregorianToMercedonius({ year: 1799, month: 6, day: 1 });
+} catch {
+  rejectedOutOfRange = true;
+}
+check('pre-1800 Gregorian rejected', rejectedOutOfRange);
 
 // ── Formatting helpers ──
 check('formatDateForDisplay non-empty', formatDateForDisplay(today).length > 0, formatDateForDisplay(today));

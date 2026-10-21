@@ -61,7 +61,7 @@ export function MonthCircle({
       )}
       <div className="month-circle-overlay">
         <span className="month-circle-label">{label}</span>
-        <span className="month-circle-year">{year}</span>
+        <span className="month-circle-year">{year} AUC</span>
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ import type { AppLocation } from '@lib/local-sky';
 
 export const LOCATION_PRESETS: AppLocation[] = [
   { name: 'Germiston, South Africa (default)', latitude: -26.1556, longitude: 28.2228, timeZone: 'Africa/Johannesburg' },
+  { name: 'Primrose, South Africa', latitude: -26.2124, longitude: 28.3259, timeZone: 'Africa/Johannesburg' },
   { name: 'Cape Town, South Africa', latitude: -33.9249, longitude: 18.4241, timeZone: 'Africa/Johannesburg' },
   { name: 'London, United Kingdom', latitude: 51.5074, longitude: -0.1278, timeZone: 'Europe/London' },
   { name: 'New York, United States', latitude: 40.7128, longitude: -74.006, timeZone: 'America/New_York' },
@@ -42,6 +43,54 @@ export function LocationPicker({ location, onChange }: LocationPickerProps) {
   const [tz, setTz] = useState(location.timeZone);
   const [customName, setCustomName] = useState('Custom location');
   const [error, setError] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
+
+  /** Best-effort reverse-geocoded place name via OpenStreetMap Nominatim (no API key). */
+  async function reverseGeocodeName(latitude: number, longitude: number): Promise<string> {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&accept-language=en`,
+        { headers: { 'User-Agent': 'Mercedonius Calendar/1.0' } },
+      );
+      if (!res.ok) return 'My current location';
+      const data = await res.json();
+      const address = data?.address ?? {};
+      return (
+        String(address.city ?? address.town ?? address.village ?? address.state ?? 'My current location')
+      );
+    } catch {
+      return 'My current location';
+    }
+  }
+
+  /** System-generates latitude/longitude (and time zone) from the device's exact location. */
+  async function handleDetectLocation() {
+    if (!navigator.geolocation) {
+      setError('Geolocation is not supported by this browser.');
+      return;
+    }
+    setLocating(true);
+    setError(null);
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation!.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000,
+        });
+      });
+      const { latitude, longitude } = pos.coords;
+      setLat(latitude.toFixed(4));
+      setLng(longitude.toFixed(4));
+      setTz(Intl.DateTimeFormat().resolvedOptions().timeZone);
+      setCustomName(await reverseGeocodeName(latitude, longitude));
+      setError(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Location could not be determined.';
+      setError(`Location detection failed: ${message}`);
+    } finally {
+      setLocating(false);
+    }
+  }
 
   const applyCustom = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,6 +123,19 @@ export function LocationPicker({ location, onChange }: LocationPickerProps) {
         </span>
         <button type="button" className="nav-btn" onClick={() => setOpen((v) => !v)}>
           {open ? 'Close' : 'Change'}
+        </button>
+        <button
+          type="button"
+          className="nav-btn"
+          onClick={handleDetectLocation}
+          disabled={locating}
+          style={{
+            marginLeft: '0.5rem',
+            fontSize: '0.75rem',
+            padding: '0.45rem 0.8rem',
+          }}
+        >
+          {locating ? 'Locating…' : '📍 Detect my location'}
         </button>
       </div>
 

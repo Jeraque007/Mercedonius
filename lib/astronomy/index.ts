@@ -68,6 +68,7 @@ export {
   getSunEquatorialPosition,
   getSunConstellation,
   getSunFullPosition,
+  getSunTropicalSign,
 } from './sun';
 
 // Moon position
@@ -78,6 +79,7 @@ export {
   getMoonConstellation,
   getMoonFullInfo,
   getMoonInfo,
+  getMoonTropicalSign,
 } from './moon';
 
 // Rising / ascendant
@@ -85,6 +87,14 @@ export { getAscendantPosition, getAscendantConstellation } from './rising';
 
 // Planets
 export { getPlanetPosition } from './planets';
+
+// Sidereal / Vedic
+export {
+  getLahiriAyanamsa,
+  tropicalToSidereal,
+  getSiderealSign,
+  SIDEREAL_SIGN_BOUNDARIES,
+} from './sidereal';
 
 // Calendar day with astronomy
 export {

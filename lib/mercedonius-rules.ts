@@ -34,6 +34,13 @@ import { MONTH_NAMES, DAYS_OF_WEEK } from './month-config';
 export const CALENDAR_SYSTEM_LABEL =
   'Mercedonius — a modern reconstructed 13-month calendar system (not historically attested)';
 
+/**
+ * AUC epoch offset per Standard 1.0 Rev 3 §3:
+ * AUC year = Gregorian year of the March equinox + 753.
+ * Gregorian January–February dates before the equinox use G + 752.
+ */
+export const AUC_EPOCH_OFFSET = 753;
+
 // ─────────────────────────────────────────────────────────────
 // Rule provenance
 
@@ -45,7 +52,7 @@ export const CALENDAR_SYSTEM_LABEL =
  *                                 explicit approval before any conversion
  *                                 code or live date value may consume it.
  */
-export type RuleStatus = 'baseline' | 'proposed-pending-approval';
+export type RuleStatus = 'baseline' | 'proposed-pending-approval' | 'superseded';
 
 // ─────────────────────────────────────────────────────────────
 // Structural rules (baseline)
@@ -140,60 +147,42 @@ export const WEEKDAY_RULES = {
 export const WEEKDAY_NAMES: readonly string[] = DAYS_OF_WEEK;
 
 // ─────────────────────────────────────────────────────────────
-// Proposed conventions — REQUIRE EXPLICIT APPROVAL
+// Approved conventions (Standard 1.0 Rev 3)
 // ─────────────────────────────────────────────────────────────
 
 /**
- * PROPOSED initial epoch convention (pending approval and validation).
- *
- * Proposal: anchor the Mercedonius day-count to Gregorian March 1 of a
- * reference year; Mercedonius year N begins on Gregorian March 1 of
- * Gregorian year N.
- *
- * WARNING: 'proposed-pending-approval'. Conversion code MUST NOT be
- * written against this constant until it is explicitly approved.
+ * Year boundary per Standard §2: UTC calendar date containing the March
+ * equinox (Sun at 0° ecliptic longitude). Replaces the former proposed
+ * Gregorian March 1 anchor.
  */
-export const EPOCH_PROPOSAL = {
-  /** Proposed anchor: Gregorian 2000-03-01 (noon UTC reference). */
-  anchorGregorianDate: '2000-03-01' as const,
-  /** Julian Day Number (noon) of the proposed anchor: J2000.0 (2451545.0) + 60 days. */
-  anchorJulianDayNoon: 2451605.0,
-  status: 'proposed-pending-approval' as RuleStatus,
+export const YEAR_BOUNDARY = {
+  rule: 'march-equinox-utc-date' as const,
+  description: 'UTC calendar date containing the March equinox instant',
+  status: 'baseline' as RuleStatus,
 } as const;
 
 /**
- * PROPOSED year-numbering policy (pending approval):
- * a Mercedonius year is numbered by the Gregorian year containing its
- * Martius 1 start. Consequence: Gregorian January–February dates belong
- * to the TAIL of the PREVIOUS Mercedonius year.
+ * Year numbering per Standard §3:
+ * AUC = Gregorian year of the equinox + 753.
+ * Dates before the equinox of year G use G + 752.
+ * Continuous from Rome; no reset to Year 1.
  */
 export const YEAR_NUMBERING = {
-  startsOnGregorian: 'March 1' as const,
-  numberRule: 'gregorian-year-of-start' as const,
-  januaryFebruaryBelongToPreviousYear: true as const,
-  status: 'proposed-pending-approval' as RuleStatus,
+  rule: 'auc-gregorian-equinox-year-plus-753' as const,
+  description: 'AUC year = Gregorian year of March equinox + 753; pre-equinox dates use G + 752',
+  status: 'baseline' as RuleStatus,
 } as const;
 
 /**
- * PROPOSED leap-year policy (pending approval):
- * a qualifying ("leap") year receives the second (adjustment) year-boundary
- * day, making that year 366 days.
- *
- * Qualification rule (precise): Mercedonius year Y spans Gregorian
- * March 1 Y → (just before) March 1 Y+1 and therefore contains Gregorian
- * year Y+1's February. Year Y qualifies iff GREGORIAN YEAR Y+1 is leap
- * under the Gregorian rule (divisible by 4, except centuries not divisible
- * by 400). Year lengths then mirror Mar→Mar Gregorian spans exactly:
- * mean year 365.2425 d — drift-free against the Gregorian calendar.
- * Implemented in lib/mercedonius/engine.ts (isMercedoniusLeapYear).
+ * Leap-year policy per Standard §4:
+ * Year length = actual days between consecutive equinox boundaries (365 or 366).
+ * Out-of-range intervals (364/367) flag an error, never fabricated.
  */
 export const LEAP_POLICY = {
-  adjustmentDayInQualifyingYears: true as const,
-  gregorianLeapRule: 'divisible-by-4-unless-by-100-unless-by-400' as const,
-  /** Precise qualification: year Y is leap iff Gregorian year Y+1 is leap. */
-  qualificationYearRule: 'gregorian-leapness-of-Y-plus-1' as const,
-  meanYearDays: 365.2425,
-  status: 'proposed-pending-approval' as RuleStatus,
+  rule: 'equinox-boundary-interval' as const,
+  description: 'Year length = days between consecutive March equinox boundaries; must be 365 or 366',
+  allowedLengths: [365, 366] as const,
+  status: 'baseline' as RuleStatus,
 } as const;
 
 // ─────────────────────────────────────────────────────────────
@@ -235,31 +224,29 @@ export const RULES_PROVENANCE: readonly RuleEntry[] = [
   },
   {
     rule: 'March 1 Gregorian anchor (epoch convention)',
-    status: 'proposed-pending-approval',
-    summary: 'EPOCH_PROPOSAL: anchor Gregorian 2000-03-01 (JD 2451605.0 noon). Not yet approved; not consumed by any code.',
+    status: 'superseded',
+    summary: 'Superseded by Standard §2: UTC calendar date of the March equinox.',
   },
   {
     rule: 'Year numbering (Gregorian year of the March 1 start)',
-    status: 'proposed-pending-approval',
-    summary: 'YEAR_NUMBERING: Jan–Feb belong to the tail of the previous Mercedonius year.',
+    status: 'superseded',
+    summary: 'Superseded by Standard §3: AUC = Gregorian equinox year + 753.',
   },
   {
     rule: 'Leap-year / adjustment-day policy',
-    status: 'proposed-pending-approval',
-    summary: 'LEAP_POLICY: Gregorian leap rule of the anchor year; mean year 365.2425 d.',
+    status: 'superseded',
+    summary: 'Superseded by Standard §4: year length = days between consecutive equinox boundaries (365/366).',
   },
   {
-    rule: 'Year-boundary day display name',
-    status: 'proposed-pending-approval',
-    summary: 'Working label only: "Year Boundary Day". Intentionally undecided.',
+    rule: 'Year-boundary day (Year Day / Leap Day)',
+    status: 'baseline',
+    summary: 'Standard §5: month 0 special days; day 1 = Year Day always, day 2 = Leap Day leap years only.',
   },
 ];
 
 /** Items deliberately NOT encoded in this module (later phases). */
 export const NOT_YET_ENCODED: readonly string[] = [
-  'Gregorian ⇄ Mercedonius conversion functions (await rule approval)',
   'Timezone policy (local vs UTC) for calendar-day boundaries',
-  'Connection of live date values to the UI dial (frozen until approval)',
   'Validation test suite against known correspondences',
 ];
 

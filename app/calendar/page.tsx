@@ -15,16 +15,17 @@ import {
   getMoonNameForDate,
   getMoonIlluminationForDate,
   getCalendarDayWithAstronomy,
+  getSunTropicalSign,
+  getMoonTropicalSign,
 } from '@lib/calendar-service';
 import { getWeekdayReferenceForDate, PLANET_GLYPHS } from '@data/astrology';
 import {
   convertGregorianTo13Month,
   getDayOfWeek,
-  getMercedoniusMonthLabel,
   formatDateForDisplay,
+  formatMercedoniusDate,
 } from '@lib/date-utils';
-
-export type ViewMode = 'dual' | 'mercedonius' | 'gregorian';
+import { useSettings } from '../components/settings-context';
 
 /** Latin weekday short names (Sunday-first), used in Mercedonius view */
 const LATIN_WEEKDAY_SHORT = ['Sol', 'Lun', 'Mar', 'Mer', 'Iov', 'Ven', 'Sat'];
@@ -33,7 +34,9 @@ const ENGLISH_WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function CalendarPage(): JSX.Element {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<ViewMode>('dual');
+  // Grid view mode is app-wide state (Settings page) — the buttons below
+  // update the same shared value.
+  const { viewMode, setViewMode } = useSettings();
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [expandedImage, setExpandedImage] = useState<{ src: string; alt: string } | null>(null);
   // Details-section filter: mirrors the date card between the 13-month and
@@ -42,7 +45,9 @@ export default function CalendarPage(): JSX.Element {
   const [detailsView, setDetailsView] = useState<'mercedonius' | 'gregorian'>('mercedonius');
 
   const mercedonius = useMemo(() => convertGregorianTo13Month(selectedDate), [selectedDate]);
-  const mercedoniusLabel = `${getMercedoniusMonthLabel(mercedonius.month === 0 ? 13 : mercedonius.month)} ${mercedonius.day}, ${mercedonius.year}`;
+  // Mercedonius is the PRIMARY field, rendered in the Standard AUC format
+  // ([Month] [Day], [AUC year] AUC). Gregorian is the secondary labeled field.
+  const mercedoniusLabel = formatMercedoniusDate(mercedonius);
   const gregorianLabel = formatDateForDisplay(selectedDate);
   // Weekday index (0=Sunday … 6=Saturday) for the selected instant — drives the
   // Day / Planetary Day mirror between Mercedonius and Gregorian detail views.
@@ -68,23 +73,73 @@ export default function CalendarPage(): JSX.Element {
   }, []);
   const nextEvent = useMemo(() => (now ? getNextEvent(now) : null), [now]);
 
-  // Per-selected-date derived values (memoized, potentially heavier math).
-  const dayAstronomy = useMemo(() => getCalendarDayWithAstronomy(selectedDate), [selectedDate]);
-  const sunConst = useMemo(() => getSunConstellation(selectedDate), [selectedDate]);
-  const planetaryDay = useMemo(() => getWeekdayReferenceForDate(selectedDate), [selectedDate]);
+  // ── Calendar day (Mercedonius / Gregorian label + day of week) from the
+  //    actual selected civil date. This is what the labels show.
+  const calendarDay = useMemo(
+    () => getCalendarDayWithAstronomy(selectedDate),
+    [selectedDate]
+  );
+
+  // ── Astronomy date. When the user is viewing the 13-month calendar, the
+  //    Mercedonius month name (e.g. "November") does NOT match the Gregorian
+  //    month of the calendrical equivalent (Mercedonius Nov 8 = Gregorian
+  //    Oct 18). Compute astronomy for the Gregorian date that matches the
+  //    Mercedonius month NAME + day, so "Mercedonius November 8" shows
+  //    Gregorian November 8 astronomy (Sun in Libra, Waning Crescent ~2%),
+  //    not October 18 astronomy (Sun in Virgo, First Quarter ~50%).
+  const MERCEDONIUS_TO_GREGORIAN_MONTH: ReadonlyMap<number, number> = new Map([
+    [1, 3], // Martius → March
+    [2, 4], // Aprilis → April
+    [3, 5], // Maius → May
+    [4, 6], // Iunius → June
+    [5, 7], // Quintilis → July
+    [6, 8], // Sextilis → August
+    [7, 9], // September → September
+    [8, 10], // October → October
+    [9, 11], // November → November
+    [10, 12], // December → December
+    [11, 1], // Ianuarius → January
+    [12, 2], // Februarius → February
+  ]);
+
+  const astroDate = useMemo(() => {
+    if (detailsView !== 'mercedonius') return selectedDate;
+    const gregMonth = MERCEDONIUS_TO_GREGORIAN_MONTH.get(mercedonius.month);
+    if (gregMonth === undefined) return selectedDate; // Intercalaris (month 13) — fall back
+    return new Date(
+      selectedDate.getUTCFullYear(),
+      gregMonth - 1,
+      mercedonius.day
+    );
+  }, [selectedDate, mercedonius, detailsView]);
+
+  // ── Astronomy computed on astroDate so the display matches the Mercedonius
+  //    month name the user selected, not the calendrical Gregorian equivalent.
+  const astroDay = useMemo(() => getCalendarDayWithAstronomy(astroDate), [
+    astroDate,
+  ]);
+  const sunConst = astroDay.sunConstellation;
+  const moonPhase = astroDay.moonPhase;
+  const sunTropical = useMemo(() => getSunTropicalSign(astroDate), [astroDate]);
+  const moonTropical = useMemo(() => getMoonTropicalSign(astroDate), [astroDate]);
+  const planetaryDay = useMemo(
+    () => getWeekdayReferenceForDate(selectedDate),
+    [selectedDate]
+  );
+
   const eclipseEvent = useMemo(
     () =>
-      dayAstronomy.astronomicalEvents.find(
+      astroDay.astronomicalEvents.find(
         (e) => e.type === 'solar_eclipse' || e.type === 'lunar_eclipse'
       ) ?? null,
-    [dayAstronomy]
+    [astroDay]
   );
   const dayEvent = useMemo(
     () =>
-      dayAstronomy.astronomicalEvents.find(
+      astroDay.astronomicalEvents.find(
         (e) => e.type !== 'solar_eclipse' && e.type !== 'lunar_eclipse'
       ) ?? null,
-    [dayAstronomy]
+    [astroDay]
   );
 
   return (
@@ -131,7 +186,11 @@ export default function CalendarPage(): JSX.Element {
           Mercedonius Calendar
         </h1>
         <p style={{ margin: '0.25rem 0 0', color: '#94a3b8' }}>
-          {gregorianLabel} · {mercedoniusLabel}
+          <span className="date-kind">Gregorian</span>{' '}
+          {gregorianLabel}
+          {' · '}
+          <span className="date-kind">Mercedonius</span>{' '}
+          {mercedoniusLabel}
         </p>
       </header>
 
@@ -198,9 +257,7 @@ export default function CalendarPage(): JSX.Element {
             </label>
             <span>
               {detailsView === 'mercedonius'
-                ? `${getMercedoniusMonthLabel(
-                    mercedonius.month === 0 ? 13 : mercedonius.month
-                  )} ${mercedonius.day}`
+                ? formatMercedoniusDate(mercedonius)
                 : gregorianLabel}
             </span>
           </div>
@@ -225,22 +282,37 @@ export default function CalendarPage(): JSX.Element {
             </span>
           </div>
 
-          {/* Astronomy — instant-based data, identical in both calendar views */}
+          {/* Astronomy — computed on the Mercedonius-matched date so the
+              display matches the month name the user selected. */ }
           <div className="detail-item">
-            <label>Sun Constellation:</label>
+            <label>Sun Constellation (IAU):</label>
             <span>
-              {sunConst.constellation.icon} {sunConst.constellation.name}
+              {sunConst.icon} {sunConst.name}
+            </span>
+          </div>
+          <div className="detail-item">
+            <label>Sun Sign (Tropical):</label>
+            <span>
+              {sunTropical.icon} {sunTropical.name} · λ
+              {sunTropical.eclipticLongitudeDeg.toFixed(1)}°
             </span>
           </div>
           <div className="detail-item">
             <label>Moon:</label>
             <span>
-              {getMoonIconForDate(selectedDate)} {getMoonNameForDate(selectedDate)}
+              {moonPhase.icon} {moonPhase.name}
+            </span>
+          </div>
+          <div className="detail-item">
+            <label>Moon Sign (Tropical):</label>
+            <span>
+              {moonTropical.icon} {moonTropical.name} · λ
+              {moonTropical.eclipticLongitudeDeg.toFixed(1)}°
             </span>
           </div>
           <div className="detail-item">
             <label>Illumination:</label>
-            <span>{getMoonIlluminationForDate(selectedDate).toFixed(1)}%</span>
+            <span>{moonPhase.illumination.toFixed(1)}%</span>
           </div>
           <div className="detail-item">
             <label>Eclipse:</label>

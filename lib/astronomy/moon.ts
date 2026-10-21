@@ -11,6 +11,7 @@ import type { ConstellationResult, MoonPositionEquatorial } from './types';
 
 // Public re-exports (the barrel index re-exports these from here)
 export { getMoonPhase, calcMoonEcliptic, getMoonEquatorialPosition } from './moon-internal';
+export { getMoonTropicalSign } from './sun';
 
 /**
  * Determine the Moon's astronomical constellation for a given date.

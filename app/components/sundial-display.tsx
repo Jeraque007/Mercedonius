@@ -12,8 +12,8 @@
 import React, { useMemo, useState } from 'react';
 import {
   convertGregorianTo13Month,
-  getMercedoniusMonthLabel,
   formatDateForDisplay,
+  formatMercedoniusDate,
 } from '@lib/date-utils';
 import {
   getCalendarDayWithAstronomy,
@@ -23,6 +23,8 @@ import {
   getMoonIlluminationForDate,
   getMoonAgeForDate,
   getEclipsesForYear,
+  getSunTropicalSign,
+  getMoonTropicalSign,
 } from '@lib/calendar-service';
 import { getWeekdayReferenceForDate, PLANET_GLYPHS } from '@data/astrology';
 import {
@@ -142,9 +144,32 @@ export function SundialDisplay({ selectedDate, viewMode, latitude = null, timeZo
   // ── Panel definitions ────────────────────────────────────────────────────
   const panels = useMemo<Record<string, DialPanelData>>(() => {
     const mer = convertGregorianTo13Month(selectedDate);
-    const merLabel = `${getMercedoniusMonthLabel(mer.month === 0 ? 13 : mer.month)} ${mer.day}, ${mer.year}`;
+    // Mercedonius is the PRIMARY field in Standard AUC format.
+    const merLabel = formatMercedoniusDate(mer);
     const gregLabel = formatDateForDisplay(selectedDate);
-    const sunConst = dayAstronomy.sunConstellation;
+
+    // ── Astronomy date. When viewing the 13-month grid, the Mercedonius
+    //    month NAME does not match the calendrical Gregorian equivalent
+    //    (Mercedonius Nov 8 = Gregorian Oct 18). Compute astronomy for the
+    //    Gregorian date matching the Mercedonius month name + day so the
+    //    display matches what the user selected.
+    const MERCEDONIUS_TO_GREGORIAN_MONTH: ReadonlyMap<number, number> = new Map([
+      [1, 3], [2, 4], [3, 5], [4, 6], [5, 7], [6, 8],
+      [7, 9], [8, 10], [9, 11], [10, 12], [11, 1], [12, 2],
+    ]);
+    const gregMonth = MERCEDONIUS_TO_GREGORIAN_MONTH.get(mer.month);
+    const astroDate =
+      gregMonth !== undefined
+        ? new Date(selectedDate.getUTCFullYear(), gregMonth - 1, mer.day)
+        : selectedDate;
+
+    // ── Astronomy computed on astroDate so it matches the Mercedonius
+    //    month name the user selected, not the calendrical equivalent.
+    const astroDay = getCalendarDayWithAstronomy(astroDate);
+    const sunConst = astroDay.sunConstellation;
+    const sunTropical = getSunTropicalSign(astroDate);
+    const moonTropical = getMoonTropicalSign(astroDate);
+    const moonPhase = astroDay.moonPhase;
     const sunConstText = `${sunConst.icon} ${sunConst.name}${sunConst.isNearBoundary ? ' (near boundary)' : ''}`;
     // Season names follow the OBSERVER'S hemisphere (engine computes the
     // astronomical instants once; a southern observer sees them flipped).
@@ -209,8 +234,9 @@ export function SundialDisplay({ selectedDate, viewMode, latitude = null, timeZo
         title: 'Zodiac',
         subtitle: 'IAU constellation bands on the ecliptic',
         rows: [
-          ['Sun constellation', sunConstText],
-          ['Longitude', `λ ${dayAstronomy.sun.eclipticLongitudeDeg.toFixed(1)}°`],
+          ['Sun constellation (IAU)', sunConstText],
+          ['Sun sign (tropical)', `${sunTropical.icon} ${sunTropical.name}`],
+          ['Longitude', `λ ${astroDay.sun.eclipticLongitudeDeg.toFixed(1)}°`],
           ['Traditional sign', traditionalSign.sign],
         ],
       },
@@ -237,10 +263,11 @@ export function SundialDisplay({ selectedDate, viewMode, latitude = null, timeZo
         title: 'Lunar',
         subtitle: 'Moon phase for the selected date',
         rows: [
-          ['Phase', `${getMoonIconForDate(selectedDate)} ${getMoonNameForDate(selectedDate)}`],
-          ['Illumination', `${getMoonIlluminationForDate(selectedDate).toFixed(1)}%`],
-          ['Age', `${getMoonAgeForDate(selectedDate).toFixed(1)} d`],
-          ['Distance', `${Math.round(dayAstronomy.moonDistanceKm).toLocaleString()} km`],
+          ['Phase', `${moonPhase.icon} ${moonPhase.name}`],
+          ['Illumination', `${moonPhase.illumination.toFixed(1)}%`],
+          ['Age', `${moonPhase.ageDays.toFixed(1)} d`],
+          ['Distance', `${Math.round(astroDay.moonDistanceKm).toLocaleString()} km`],
+          ['Moon sign (tropical)', `${moonTropical.icon} ${moonTropical.name}`],
         ],
       },
       seasonal: {
@@ -270,7 +297,7 @@ export function SundialDisplay({ selectedDate, viewMode, latitude = null, timeZo
         title: 'Eclipse',
         subtitle: 'Eclipse candidates for this date & year',
         rows: [
-          ['Status (this date)', eclipseStatusText[dayAstronomy.eclipseStatus] ?? 'None'],
+          ['Status (this date)', eclipseStatusText[astroDay.eclipseStatus] ?? 'None'],
           ...eclipseCandidates.map(
             (e): [string, string] => [
               e.type === 'solar' ? '☀️ Solar candidate' : '🌙 Lunar candidate',

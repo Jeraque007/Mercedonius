@@ -1,12 +1,31 @@
 'use client';
 
 import React, { useState } from 'react';
-import { calculateBirthSky } from '@lib/astronomy';
+import {
+  calculateBirthSky,
+  getSunConstellation,
+  getMoonPhase,
+  getSunTropicalSign,
+  getMoonTropicalSign,
+  getSiderealSign,
+} from '@lib/astronomy';
 import type { BirthSkyResult } from '@lib/astronomy';
+import { useSettings } from './settings-context';
 import {
   convertGregorianTo13Month,
   formatMercedoniusDate as formatMercedoniusCivilDate,
+  formatDateForDisplay,
 } from '@lib/date-utils';
+
+/** Validate an IANA time zone; returns error text or null. */
+function validateTimeZone(tz: string): string | null {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz.trim() });
+    return null;
+  } catch {
+    return `"${tz.trim()}" is not a valid IANA time zone (e.g. Africa/Johannesburg)`;
+  }
+}
 
 /** Format an instant's Mercedonius date, e.g. "November 5, 2026" (engine-routed). */
 function formatMercedoniusDate(date: Date): string {
@@ -40,19 +59,43 @@ export function BirthSkyForm({ onSubmit }: BirthSkyFormProps) {
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [location, setLocation] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!date || !time) return;
+    setError(null);
+
+    if (!date || !time) {
+      setError('Date and time of birth are required.');
+      return;
+    }
+    if (!location.trim()) {
+      setError('Location is required.');
+      return;
+    }
+    const tzError = validateTimeZone(timezone);
+    if (tzError) {
+      setError(tzError);
+      return;
+    }
     const lat = parseFloat(latitude);
     const lon = parseFloat(longitude);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+      setError('Latitude must be a number between −90 and 90.');
+      return;
+    }
+    if (!Number.isFinite(lon) || lon < -180 || lon > 180) {
+      setError('Longitude must be a number between −180 and 180.');
+      return;
+    }
+
     onSubmit({
       date: new Date(date),
       time: new Date(`${date}T${time}:00`),
-      timezone: timezone || 'UTC',
-      latitude: Number.isFinite(lat) ? lat : 0,
-      longitude: Number.isFinite(lon) ? lon : 0,
-      location,
+      timezone: timezone.trim(),
+      latitude: lat,
+      longitude: lon,
+      location: location.trim(),
     });
   };
 
@@ -61,33 +104,74 @@ export function BirthSkyForm({ onSubmit }: BirthSkyFormProps) {
       <div className="input-row">
         <div className="input-item">
           <label>Date of birth</label>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            required
+          />
         </div>
         <div className="input-item">
           <label>Birth time</label>
-          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+          <input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            required
+          />
         </div>
       </div>
       <div className="input-row">
         <div className="input-item">
           <label>Location</label>
-          <input type="text" placeholder="e.g., Tokyo, Japan" value={location} onChange={(e) => setLocation(e.target.value)} />
+          <input
+            type="text"
+            placeholder="e.g., Primrose, South Africa"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            required
+          />
         </div>
         <div className="input-item">
           <label>Timezone (IANA)</label>
-          <input type="text" placeholder="e.g., Asia/Tokyo" value={timezone} onChange={(e) => setTimezone(e.target.value)} />
+          <input
+            type="text"
+            placeholder="e.g., Africa/Johannesburg"
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            required
+          />
         </div>
       </div>
       <div className="input-row">
         <div className="input-item">
           <label>Latitude (°)</label>
-          <input type="number" step="0.0001" value={latitude} placeholder="optional" onChange={(e) => setLatitude(e.target.value)} />
+          <input
+            type="number"
+            step="0.0001"
+            min={-90}
+            max={90}
+            value={latitude}
+            placeholder="required"
+            onChange={(e) => setLatitude(e.target.value)}
+            required
+          />
         </div>
         <div className="input-item">
           <label>Longitude (°)</label>
-          <input type="number" step="0.0001" value={longitude} placeholder="optional" onChange={(e) => setLongitude(e.target.value)} />
+          <input
+            type="number"
+            step="0.0001"
+            min={-180}
+            max={180}
+            value={longitude}
+            placeholder="required"
+            onChange={(e) => setLongitude(e.target.value)}
+            required
+          />
         </div>
       </div>
+      {error && <p className="location-error">{error}</p>}
       <button type="submit" className="search-btn" disabled={!date || !time}>
         Calculate Birth Sky
       </button>
@@ -113,21 +197,40 @@ export function BirthSkyResults({ profile }: BirthSkyResultsProps) {
     location: profile.location ?? '',
   });
 
+  // Tropical signs for Sun and Moon on this date
+  const sunTropical = getSunTropicalSign(sky.profile.birthTime);
+  const moonTropical = getMoonTropicalSign(sky.profile.birthTime);
+
+  // Sidereal (Vedic) signs — sidereal longitude = tropical − ayanamsa
+  const sunSidereal = getSiderealSign(
+    sky.sun.eclipticLongitudeDeg,
+    sky.profile.birthTime
+  );
+  const moonSidereal = getSiderealSign(
+    sky.moon.eclipticLongitudeDeg,
+    sky.profile.birthTime
+  );
+
+  const ayanamsaDeg = sunSidereal.ayanamsaDeg;
+
   return (
     <div className="birth-sky-results">
       <div className="sky-object">
         <span className="object-label">Sun</span>
         <span className="object-icon">☀️</span>
         <span className="object-value">
-          {sky.sunConstellation.icon} {sky.sunConstellation.name}
-          {sky.sunConstellation.isNearBoundary ? ' (near boundary)' : ''}
+          {sunTropical.icon} {sunTropical.name} (tropical) ·
+          {sunSidereal.icon} {sunSidereal.name} (sidereal/Vedic) ·
+          λ {sky.sun.eclipticLongitudeDeg.toFixed(2)}°
         </span>
       </div>
       <div className="sky-object">
         <span className="object-label">Moon</span>
         <span className="object-icon">☾</span>
         <span className="object-value">
-          {sky.moonConstellation.icon} {sky.moonConstellation.name} — {sky.moonPhase.name}
+          {moonTropical.icon} {moonTropical.name} (tropical) ·
+          {moonSidereal.icon} {moonSidereal.name} (sidereal/Vedic) ·
+          λ {sky.moon.eclipticLongitudeDeg.toFixed(2)}°
         </span>
       </div>
       <div className="sky-object">
@@ -159,9 +262,14 @@ export function BirthSkyResults({ profile }: BirthSkyResultsProps) {
           {sky.timezoneInfo.offsetHours}
           {sky.timezoneInfo.isDST ? ', DST' : ''})
         </p>
+        <p>
+          <strong>Ayanamsa (Lahiri):</strong> {ayanamsaDeg.toFixed(4)}° — sidereal
+          = tropical − ayanamsa
+        </p>
         <p className="status-note">
-          Note: birth time is interpreted as Universal Time for the astronomical
-          calculation. Astronomical positions only — no astrological claims.
+          Tropical and sidereal signs shown side by side. Birth time is
+          interpreted as Universal Time for the astronomical calculation.
+          Astronomical positions only — no astrological claims.
         </p>
       </div>
     </div>
@@ -176,7 +284,26 @@ export function MySkySection({
   now: Date;
   todayView: (date: Date) => { sun: string; moon: string; date: string };
 }) {
+  // App-wide preferences (Settings page): observation location + zodiac system.
+  const { location, zodiacSystem } = useSettings();
   const [birthProfile, setBirthProfile] = useState<BirthProfile | null>(null);
+
+  // "Tonight's Sky" Sun line honours the selected zodiac system: IAU
+  // constellation, tropical sign, or sidereal (Lahiri) sign — all reading the
+  // same ecliptic longitude, only the segmentation differs.
+  const sunLine =
+    zodiacSystem === 'tropical'
+      ? (() => {
+          const s = getSunTropicalSign(now);
+          return `${s.icon} ${s.name} (Tropical)`;
+        })()
+      : zodiacSystem === 'vedic'
+        ? (() => {
+            const lon = getSunConstellation(now).constellationResult.eclipticLongitudeDeg;
+            const s = getSiderealSign(lon, now);
+            return `${s.icon} ${s.name} (${s.sanskrit})`;
+          })()
+        : todayView(now).sun;
 
   return (
     <div className="my-sky">
@@ -187,12 +314,17 @@ export function MySkySection({
         {birthProfile && <BirthSkyResults profile={birthProfile} />}
       </div>
       <div className="sky-section">
-        <h4>Tonight's Sky <span className="pane-origin">— live, current moment</span></h4>
+        <h4>
+          Tonight's Sky{' '}
+          <span className="pane-origin">
+            — live, current moment · {location.name}
+          </span>
+        </h4>
         <div className="tonight-sky">
           <div className="sky-object">
             <span className="object-label">Sun</span>
             <span className="object-icon">☀️</span>
-            <span className="object-value">{todayView(now).sun}</span>
+            <span className="object-value">{sunLine}</span>
           </div>
           <div className="sky-object">
             <span className="object-label">Moon</span>

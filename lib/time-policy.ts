@@ -63,6 +63,22 @@ export function localCivilDate(instant: Date, timeZone?: string): GregorianDate 
 }
 
 /**
+ * Resolve an instant to its civil date in UTC — used for calendar
+ * conversions where the Standard's boundaries are defined on UTC calendar
+ * dates (March equinox). No local-zone interpretation.
+ */
+export function utcCivilDate(instant: Date): GregorianDate {
+  if (!(instant instanceof Date) || Number.isNaN(instant.getTime())) {
+    throw new RangeError('utcCivilDate: expected a valid Date instant');
+  }
+  return {
+    year: instant.getUTCFullYear(),
+    month: instant.getUTCMonth() + 1,
+    day: instant.getUTCDate(),
+  };
+}
+
+/**
  * Integer JDN of the UTC calendar day containing the instant — for
  * UTC-domain day indexing (astronomical event day windows, JD math).
  */
@@ -70,11 +86,7 @@ export function utcJDN(instant: Date): number {
   if (!(instant instanceof Date) || Number.isNaN(instant.getTime())) {
     throw new RangeError('utcJDN: expected a valid Date instant');
   }
-  return gregorianToJDN({
-    year: instant.getUTCFullYear(),
-    month: instant.getUTCMonth() + 1,
-    day: instant.getUTCDate(),
-  });
+  return gregorianToJDN(utcCivilDate(instant));
 }
 
 // ─────────────────────────────────────────────────────────────

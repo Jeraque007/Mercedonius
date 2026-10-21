@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { ZodiacRing } from '../components/zodiac-ring';
 import {
   convertGregorianTo13Month,
-  getMercedoniusMonthLabel,
   formatDateForDisplay,
+  formatMercedoniusDate,
 } from '@lib/date-utils';
-import { getSunConstellation, getCalendarDayWithAstronomy } from '@lib/calendar-service';
+import { getSunConstellation, getCalendarDayWithAstronomy, getSunTropicalSign } from '@lib/calendar-service';
+import { getSiderealSign } from '@lib/astronomy';
+import { useSettings } from '../components/settings-context';
 
 interface ZodiacRingPageProps {}
 
@@ -18,11 +20,29 @@ export default function ZodiacRingPage(): JSX.Element {
   // Ring navigation state: which constellation section the user has focused
   // (null → centre follows the Sun's constellation on the selected date).
   const [focusedName, setFocusedName] = useState<string | null>(null);
+  // Zodiac system comes from the app-wide settings (Settings page).
+  const { zodiacSystem } = useSettings();
 
   const dayAstronomy = useMemo(() => getCalendarDayWithAstronomy(selectedDate), [selectedDate]);
   const mercedonius = convertGregorianTo13Month(selectedDate);
-  const mercedoniusLabel = `${getMercedoniusMonthLabel(mercedonius.month === 0 ? 13 : mercedonius.month)} ${mercedonius.day}, ${mercedonius.year}`;
+  // Mercedonius is the PRIMARY field in Standard AUC format.
+  const mercedoniusLabel = formatMercedoniusDate(mercedonius);
   const gregorianLabel = formatDateForDisplay(selectedDate);
+
+  // Sun's sign in the selected system — shown alongside the (IAU) ring.
+  const sunSignLine = useMemo(() => {
+    const lon = dayAstronomy.sun.eclipticLongitudeDeg;
+    if (zodiacSystem === 'tropical') {
+      const s = getSunTropicalSign(selectedDate);
+      return `${s.icon} ${s.name} (Tropical) · λ ${lon.toFixed(1)}°`;
+    }
+    if (zodiacSystem === 'vedic') {
+      const s = getSiderealSign(lon, selectedDate);
+      return `${s.icon} ${s.name} (${s.sanskrit}) · λ ${s.siderealLongitudeDeg.toFixed(1)}°`;
+    }
+    const c = dayAstronomy.sunConstellation;
+    return `${c.icon} ${c.name} (IAU) · λ ${lon.toFixed(1)}°`;
+  }, [zodiacSystem, selectedDate, dayAstronomy]);
 
   const goBack = () => router.push('/calendar');
   const goNext = () => router.push('/local-sky');
@@ -71,8 +91,13 @@ export default function ZodiacRingPage(): JSX.Element {
           Astronomical Zodiac
         </h1>
         <p style={{ margin: '0.25rem 0 0', color: '#94a3b8' }}>
-          {gregorianLabel} · {mercedoniusLabel}
+          <span className="date-kind">Gregorian</span>{' '}
+          {gregorianLabel}
+          {' · '}
+          <span className="date-kind">Mercedonius</span>{' '}
+          {mercedoniusLabel}
         </p>
+        <p style={{ margin: '0.25rem 0 0', color: '#fbbf24' }}>Sun: {sunSignLine}</p>
       </header>
 
       <section style={{ marginBottom: '1.5rem' }}>

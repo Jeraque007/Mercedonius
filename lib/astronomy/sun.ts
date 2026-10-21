@@ -13,6 +13,7 @@
  */
 
 import { deg2rad, rad2deg, normalizeDegrees, normalizeDegreesSigned, eclipticToEquatorial } from './coordinates';
+import { getMoonEquatorialPosition } from './moon-internal';
 import { CONSTELLATION_BOUNDARIES, getConstellationByEclipticLongitude, isNearBoundary, CONSTELLATION_NAMES, CONSTELLATION_ICONS } from './constellations';
 import type { SunPositionEquatorial, SunPositionEcliptic, ConstellationResult } from './types';
 
@@ -130,6 +131,74 @@ export function getSunConstellation(date: Date): {
     constellationResult,
     isNearBoundary: nearBoundary,
     boundaryDistance: nearBoundary ? boundaryCheck.angularDistanceDeg : 0,
+  };
+}
+
+/** Tropical zodiac sign boundaries (ecliptic longitude start degrees). */
+export const TROPICAL_SIGN_BOUNDARIES: readonly { name: string; icon: string; latin: string; fromDeg: number }[] = [
+  { name: 'Aries', icon: '♈', latin: 'Aries', fromDeg: 0 },
+  { name: 'Taurus', icon: '♉', latin: 'Taurus', fromDeg: 30 },
+  { name: 'Gemini', icon: '♊', latin: 'Gemini', fromDeg: 60 },
+  { name: 'Cancer', icon: '♋', latin: 'Cancer', fromDeg: 90 },
+  { name: 'Leo', icon: '♌', latin: 'Leo', fromDeg: 120 },
+  { name: 'Virgo', icon: '♍', latin: 'Virgo', fromDeg: 150 },
+  { name: 'Libra', icon: '♎', latin: 'Libra', fromDeg: 180 },
+  { name: 'Scorpio', icon: '♏', latin: 'Scorpio', fromDeg: 210 },
+  { name: 'Sagittarius', icon: '♐', latin: 'Sagittarius', fromDeg: 240 },
+  { name: 'Capricorn', icon: '♑', latin: 'Capricorn', fromDeg: 270 },
+  { name: 'Aquarius', icon: '♒', latin: 'Aquarius', fromDeg: 300 },
+  { name: 'Pisces', icon: '♓', latin: 'Pisces', fromDeg: 330 },
+] as const;
+
+/**
+ * Tropical (astrological) zodiac sign for the Sun on a given date.
+ * Divides the ecliptic into 12 equal 30° segments starting at 0° Aries.
+ */
+export function getSunTropicalSign(date: Date): {
+  name: string;
+  icon: string;
+  latin: string;
+  eclipticLongitudeDeg: number;
+} {
+  const jd = (date.getTime() / 86400000) + 2440587.5;
+  const lon = calcSunEcliptic(jd).longitudeDeg;
+  const normalized = ((lon % 360) + 360) % 360;
+
+  let sign = TROPICAL_SIGN_BOUNDARIES[0];
+  for (const s of TROPICAL_SIGN_BOUNDARIES) {
+    if (normalized >= s.fromDeg) sign = s;
+  }
+
+  return {
+    name: sign.name,
+    icon: sign.icon,
+    latin: sign.latin,
+    eclipticLongitudeDeg: normalized,
+  };
+}
+
+/**
+ * Tropical (astrological) zodiac sign for the Moon on a given date.
+ */
+export function getMoonTropicalSign(date: Date): {
+  name: string;
+  icon: string;
+  latin: string;
+  eclipticLongitudeDeg: number;
+} {
+  const { eclipticLongitudeDeg } = getMoonEquatorialPosition(date);
+  const normalized = ((eclipticLongitudeDeg % 360) + 360) % 360;
+
+  let sign = TROPICAL_SIGN_BOUNDARIES[0];
+  for (const s of TROPICAL_SIGN_BOUNDARIES) {
+    if (normalized >= s.fromDeg) sign = s;
+  }
+
+  return {
+    name: sign.name,
+    icon: sign.icon,
+    latin: sign.latin,
+    eclipticLongitudeDeg: normalized,
   };
 }
 

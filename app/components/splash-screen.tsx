@@ -225,6 +225,169 @@ export function SplashScreen() {
         >
           Welcome
         </button>
+
+        {/* Payment section */}
+        <div
+          className="splash-payment-section"
+          style={{
+            marginTop: '2rem',
+            padding: '1.5rem',
+            borderTop: '1px solid rgba(255,215,0,0.3)',
+            borderBottom: '1px solid rgba(255,215,0,0.3)',
+          }}
+        >
+          <h3
+            className="splash-payment-title"
+            style={{
+              margin: 0,
+              marginBottom: '1rem',
+              fontSize: '1rem',
+              color: '#ffd700',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+            }}
+          >
+            Support Mercedonius
+          </h3>
+          <p
+            className="splash-payment-desc"
+            style={{
+              margin: '0.5rem 0 1rem 0',
+              fontSize: '0.875rem',
+              color: '#ccc',
+              lineHeight: '1.5',
+            }}
+          >
+            Help development of the Mercedonius calendar. Your support keeps this
+            astronomical calendar project alive.
+          </p>
+
+          <div
+            className="splash-payment-methods"
+            style={{
+              display: 'flex',
+              gap: '1rem',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+            }}
+          >
+            {/* Visa */}
+            <button
+              type="button"
+              className="splash-payment-btn visa"
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid #ffffff',
+                color: '#fff',
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255,255,255,0.2)';
+                e.target.style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255,255,255,0.1)';
+                e.target.style.boxShadow = 'none';
+              }}
+            >
+              Visa
+            </button>
+
+            {/* Mastercard */}
+            <button
+              type="button"
+              className="splash-payment-btn mastercard"
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid #ffffff',
+                color: '#fff',
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255,255,255,0.2)';
+                e.target.style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255,255,255,0.1)';
+                e.target.style.boxShadow = 'none';
+              }}
+            >
+              Mastercard
+            </button>
+
+            {/* Amex */}
+            <button
+              type="button"
+              className="splash-payment-btn amex"
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid #ffffff',
+                color: '#fff',
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255,255,255,0.2)';
+                e.target.style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255,255,255,0.1)';
+                e.target.style.boxShadow = 'none';
+              }}
+            >
+              Amex
+            </button>
+
+            {/* PayPal */}
+            <button
+              type="button"
+              className="splash-payment-btn paypal"
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid #ffffff',
+                color: '#fff',
+                padding: '0.5rem 1rem',
+                fontSize: '0.875rem',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255,255,255,0.2)';
+                e.target.style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255,255,255,0.1)';
+                e.target.style.boxShadow = 'none';
+              }}
+            >
+              PayPal
+            </button>
+          </div>
+
+          <p
+            className="splash-payment-pricing"
+            style={{
+              marginTop: '1rem',
+              fontSize: '0.875rem',
+              color: '#ffd700',
+              textAlign: 'center',
+            }}
+          >
+            / month or / year
+          </p>
+        </div>
       </div>
     </div>
   );

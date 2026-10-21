@@ -4,21 +4,16 @@ import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LocalSkyPanel } from '../components/local-sky-panel';
 import { getLocalSky } from '@lib/calendar-service';
-import type { AppLocation } from '@lib/local-sky';
+import { useSettings } from '../components/settings-context';
 
 interface LocalSkyPageProps {}
-
-const DEFAULT_LOCATION: AppLocation = {
-  name: 'Germiston, South Africa (default)',
-  latitude: -26.1556,
-  longitude: 28.2228,
-  timeZone: 'Africa/Johannesburg',
-};
 
 export default function LocalSkyPage(): JSX.Element {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [hour12, setHour12] = useState(true);
+  // Observation location comes from the app-wide settings (Settings page).
+  const { location } = useSettings();
 
   const civilDate = useMemo(
     () => ({
@@ -29,7 +24,7 @@ export default function LocalSkyPage(): JSX.Element {
     [selectedDate]
   );
 
-  const sky = useMemo(() => getLocalSky(civilDate, DEFAULT_LOCATION), [civilDate]);
+  const sky = useMemo(() => getLocalSky(civilDate, location), [civilDate, location]);
 
   const goBack = () => router.push('/zodiac-ring');
   const goNext = () => router.push('/my-sky');
@@ -78,7 +73,7 @@ export default function LocalSkyPage(): JSX.Element {
           Local Sky
         </h1>
         <p style={{ margin: '0.25rem 0 0', color: '#94a3b8' }}>
-          {DEFAULT_LOCATION.name} · {DEFAULT_LOCATION.timeZone}
+          {location.name} · {location.timeZone}
         </p>
       </header>
 

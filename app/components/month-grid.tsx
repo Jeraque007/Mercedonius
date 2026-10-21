@@ -1,7 +1,7 @@
 'use client';
 
 import React, { memo } from 'react';
-import { convertGregorianTo13Month, getMercedoniusMonthLabel } from '@lib/date-utils';
+import { convertGregorianTo13Month, getMercedoniusMonthLabel, getSpecialDayName } from '@lib/date-utils';
 import { mercedoniusToGregorian, weekdayOfGregorian } from '@lib/mercedonius/engine';
 import { MONTH_ART } from '@lib/month-art';
 import { GREG_MONTHS } from '@lib/month-config';
@@ -61,7 +61,9 @@ export const MonthGrid = memo(function MonthGrid({ date, calendar, selected, onS
 
   const title = isGreg
     ? `${GREG_MONTHS[monthIndex]} ${year}`
-    : `${getMercedoniusMonthLabel(merMonth)} ${mer.year}`;
+    : `${getMercedoniusMonthLabel(
+        mer.month === 0 ? 13 : mer.month
+      )} ${mer.year} AUC`;
   const subtitle = isGreg
     ? 'Gregorian calendar'
     : mer.month === 0

@@ -73,7 +73,7 @@ export { getLunarPosition, getMoonDistanceKm, getMoonDiameterArcs, getMoonPhaseI
 
 // ── Calendar day with astronomy ──
 export type { CalendarDayWithAstronomy } from './astronomy';
-export { getCalendarDayWithAstronomy, getSunConstellation, getTraditionalZodiacSign } from './astronomy';
+export { getCalendarDayWithAstronomy, getSunConstellation, getTraditionalZodiacSign, getSunTropicalSign, getMoonTropicalSign } from './astronomy';
 
 import { getDayName, convertGregorianTo13Month } from './date-utils';
 import type { MonthDay } from './date-utils';

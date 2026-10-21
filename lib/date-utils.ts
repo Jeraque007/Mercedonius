@@ -21,7 +21,7 @@ import {
   weekdayOfGregorian,
   type MercedoniusDate,
 } from './mercedonius/engine';
-import { localCivilDate } from './time-policy';
+import { localCivilDate, utcCivilDate } from './time-policy';
 
 // ──────────────────────────────────────────────
 // Julian Day utilities (instant domain — shared with astronomy)
@@ -72,12 +72,12 @@ export type MonthDay = MercedoniusDate;
 
 /**
  * Instant → Mercedonius civil date.
- * The instant is resolved to its civil date per the explicit time policy
- * (user-selected zone, default device zone), then converted by the
+ * The instant is resolved to its UTC civil date (per Standard §2–§3, the
+ * equinox year boundary is a UTC calendar date), then converted by the
  * authoritative engine — real day-count arithmetic, never a month rename.
  */
 export function convertGregorianTo13Month(gregorianDate: Date): MonthDay {
-  return gregorianToMercedonius(localCivilDate(gregorianDate));
+  return gregorianToMercedonius(utcCivilDate(gregorianDate));
 }
 
 /**
@@ -140,11 +140,26 @@ export function getMercedoniusMonthLabel(month: number): string {
 }
 
 /**
- * Format a full Mercedonius date for display,
- * e.g. "Martius 14, 2026" or "Year-Boundary Day 2, 2028".
+ * Name of a month-0 special day: day 1 = Year Day (always), day 2 =
+ * Leap Day (leap years only). Returns undefined for other days.
+ */
+export function getSpecialDayName(day: number): string | undefined {
+  if (day === 1) return 'Year Day';
+  if (day === 2) return 'Leap Day';
+  return undefined;
+}
+
+/**
+ * Format a full Mercedonius date for display per Standard display format:
+ *   '[Month] [Day], [AUC year] AUC'
+ * e.g. "Martius 14, 2779 AUC" or "Year Day, 2779 AUC".
  */
 export function formatMercedoniusDate(md: MonthDay): string {
-  return `${getMercedoniusMonthLabel(md.month)} ${md.day}, ${md.year}`;
+  if (md.month === 0) {
+    const name = getSpecialDayName(md.day) ?? 'Boundary Day';
+    return `${name}, ${md.year} AUC`;
+  }
+  return `${getMercedoniusMonthLabel(md.month)} ${md.day}, ${md.year} AUC`;
 }
 
 /**

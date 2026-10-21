@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MySkySection } from '../components/birth-sky';
+import { useSettings } from '../components/settings-context';
+import { OfficialEmailSection } from '../components/official-email-section';
 import { formatDateForDisplay } from '@lib/date-utils';
 import {
   getSunConstellation,
@@ -11,11 +13,12 @@ import {
   getMoonIcon,
 } from '@lib/calendar-service';
 
-interface MyskyPageProps {}
-
 export default function MyskyPage(): JSX.Element {
   const router = useRouter();
   const [now, setNow] = useState<Date>(() => new Date());
+  // Observation location + calendar view mode come from the app-wide
+  // settings (Settings page) — session-scoped, reset on reload.
+  const { location } = useSettings();
 
   const todayView = useCallback(
     (date: Date) => {
@@ -32,13 +35,14 @@ export default function MyskyPage(): JSX.Element {
     []
   );
 
-  useMemo(() => {
+  useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const goBack = () => router.push('/local-sky');
-  const goNext = () => router.push('/calendar');
+  const goBack = () => router.push('/calendar');
+  const goNext = () => router.push('/zodiac-ring');
+  const goSettings = () => router.push('/settings');
 
   return (
     <div className="mysky-page page-container" style={{ padding: '1.5rem', maxWidth: 900, margin: '0 auto', minHeight: '100vh' }}>
@@ -52,14 +56,24 @@ export default function MyskyPage(): JSX.Element {
           ← Back
         </button>
         <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fbbf24' }}>My Sky</div>
-        <button
-          type="button"
-          onClick={goNext}
-          className="nav-btn"
-          style={{ padding: '0.5rem 1rem', background: '#1e293b', color: '#e2e8f0', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
-        >
-          Next →
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            type="button"
+            onClick={goSettings}
+            className="nav-btn"
+            style={{ padding: '0.5rem 1rem', background: '#1e293b', color: '#e2e8f0', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
+          >
+            ⚙ Settings
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            className="nav-btn"
+            style={{ padding: '0.5rem 1rem', background: '#1e293b', color: '#e2e8f0', border: '1px solid #475569', borderRadius: '6px', cursor: 'pointer' }}
+          >
+            Next →
+          </button>
+        </div>
       </nav>
 
       <header style={{ marginBottom: '1.5rem' }}>
@@ -83,10 +97,23 @@ export default function MyskyPage(): JSX.Element {
         >
           My Sky
         </h1>
-        <p style={{ margin: '0.25rem 0 0', color: '#94a3b8' }}>{formatDateForDisplay(now)}</p>
+        <p style={{ margin: '0.25rem 0 0', color: '#94a3b8' }}>
+          {formatDateForDisplay(now)} · {location.name}
+        </p>
       </header>
+
+      <section
+        style={{
+          marginTop: '2rem',
+          borderTop: '1px solid #334155',
+          paddingTop: '1.5rem',
+        }}
+      >
+        <OfficialEmailSection />
+      </section>
 
       <MySkySection now={now} todayView={todayView} />
     </div>
   );
 }
+

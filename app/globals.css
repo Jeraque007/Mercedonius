@@ -1111,6 +1111,7 @@ body {
 
 .splash-screen {
   min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
   background: var(--bg-primary);
   display: flex;
@@ -1203,12 +1204,16 @@ body {
   inset: 0;
   z-index: -1;
   background:
+    /* Celestial glow tints — on top of the veil for atmosphere */
     radial-gradient(circle at 50% 50%, rgba(74, 158, 255, 0.18) 0%, transparent 48%),
     radial-gradient(circle at 25% 30%, rgba(212, 175, 55, 0.13) 0%, transparent 40%),
     radial-gradient(circle at 78% 75%, rgba(212, 175, 55, 0.10) 0%, transparent 40%),
     radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04) 0%, transparent 55%),
-    var(--bg-primary);
-  background-size: cover;
+    /* Dark veil — keeps the artwork present but subdued behind content */
+    linear-gradient(rgba(10, 10, 18, 0.75), rgba(10, 10, 18, 0.75)),
+    /* The artwork itself — sharp, fixed, cover (no blur) */
+    url('/background.png') center center / cover no-repeat;
+  background-color: var(--bg-primary);
 }
 
 /* Starfield — twinkling dots across the backdrop */
@@ -1252,15 +1257,15 @@ body {
 }
 
 /* Page containers — translucent so the celestial background shows through
-   on every page, while keeping text comfortably readable. */
+   on every page, while keeping text comfortably readable. No backdrop blur:
+   the artwork stays sharp behind the panels. */
 .page-container {
-  background: rgba(10, 10, 18, 0.68) !important;
-  backdrop-filter: blur(2px);
+  background: rgba(10, 10, 18, 0.62) !important;
 }
 
-/* Splash screen — same background carries through, dimmed for legibility */
+/* Splash screen — a light base wash behind the astrolabe art */
 .splash-screen {
-  background: rgba(10, 10, 18, 0.78) !important;
+  background: rgba(10, 10, 18, 0.55) !important;
 }
 
 .splash-welcome-btn {
@@ -1781,4 +1786,123 @@ body {
   content: '?';
   color: var(--gold);
   margin-right: 0.25rem;
+
+/* ══════════════════════════════════════════════════════════════════════════════════
+   Terms & Conditions — subtle footnote link, present on every page
+   ══════════════════════════════════════════════════════════════════════════════════ */
+
+.terms-footnote {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  text-align: center;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.terms-footnote a {
+  color: var(--gold);
+  text-decoration: underline;
+  text-decoration-thickness: 0.5px;
+  text-underline-offset: 2px;
+}
+.terms-footnote a:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════
+   Terms acceptance popup — small but readable; a forced agree/disagree choice
+   ══════════════════════════════════════════════════════════════════════════════════ */
+
+.terms-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(7, 11, 26, 0.7);
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+  touch-action: manipulation;
+}
+.terms-popup[aria-hidden='true'] {
+  display: none !important;
+}
+.terms-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  width: 100%;
+  max-width: 440px;
+  max-height: 88vh;
+  overflow-y: auto;
+  border-radius: 10px;
+  padding: 1.25rem 1.25rem 1rem;
+  color: var(--text-primary);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.65);
+}
+.terms-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.terms-card p {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.terms-card p:last-child {
+  margin-bottom: 0;
+}
+.terms-card a {
+  color: var(--gold-light);
+  text-decoration: underline;
+  text-decoration-thickness: 0.5px;
+  text-underline-offset: 2px;
+}
+.terms-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+.terms-btn {
+  flex: 1;
+  border: none;
+  border-radius: 6px;
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  touch-action: manipulation;
+}
+.terms-btn--agree {
+  background: var(--gold);
+  color: var(--bg-primary);
+}
+.terms-btn--agree:active {
+  transform: translateY(-1px);
+}
+.terms-btn--disagree {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+.terms-declined {
+  text-align: center;
+  padding: 1.25rem;
+}
+.terms-declined p {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
 }
