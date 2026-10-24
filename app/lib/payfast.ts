@@ -60,8 +60,8 @@ function pfEncode(str: string): string {
     .replace(/\(/g, '%28')
     .replace(/\)/g, '%29')
     .replace(/\*/g, '%2A')
+    .replace(/\$/g, '%24')
     .replace(/~/g, '%7E')
-    // PHP urlencode() does NOT encode '/' — leave it as-is to match PayFast
     .replace(/%2F/g, '/');
 }
 
