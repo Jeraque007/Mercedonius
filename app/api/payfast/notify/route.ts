@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { paymentStore } from '../../../lib/paymentStore';
+import { PAYFAST_VALIDATE_URL } from '../../../lib/payfast';
 
 const PAYFAST_SANDBOX = process.env.PAYFAST_SANDBOX === 'true';
 
-const PAYFAST_SANDBOX_MERCHANT_ID = process.env.PAYFAST_SANDBOX_MERCHANT_ID || '10004002';
-const PAYFAST_SANDBOX_MERCHANT_KEY = process.env.PAYFAST_SANDBOX_MERCHANT_KEY || 'q1cd2rdny4a53';
-const PAYFAST_SANDBOX_URL = process.env.PAYFAST_SANDBOXURL || 'https://sandbox.payfast.co.za/eng/process';
+const PAYFAST_SANDBOX_MERCHANT_ID = process.env.PAYFAST_SANDBOX_MERCHANT_ID || '10036507';
+const PAYFAST_SANDBOX_MERCHANT_KEY = process.env.PAYFAST_SANDBOX_MERCHANT_KEY || '7zwxmbbv6nbz1';
+const PAYFAST_SANDBOX_URL = process.env.PAYFAST_SANDBOX_URL || 'https://sandbox.payfast.co.za/eng/process';
 
 const PAYFAST_MERCHANT_ID = PAYFAST_SANDBOX
   ? PAYFAST_SANDBOX_MERCHANT_ID
@@ -13,8 +14,9 @@ const PAYFAST_MERCHANT_ID = PAYFAST_SANDBOX
 const PAYFAST_MERCHANT_KEY = PAYFAST_SANDBOX
   ? PAYFAST_SANDBOX_MERCHANT_KEY
   : (process.env.PAYFAST_MERCHANT_KEY || 'eki2ah3zqprwe');
-const PAYFAST_PASSPHRASE = process.env.PAYFAST_PASSPHRASE || 'payfast';
-
+const PAYFAST_PASSPHRASE = PAYFAST_SANDBOX
+  ? (process.env.PAYFAST_SANDBOX_SALT_PASSPHRASE || '963hlvbsbtest')
+  : (process.env.PAYFAST_SECURITY_PASSPHRASE || ',Usiness-ynergy/octor75');
 
 
 function md5(str: string): string {
@@ -34,7 +36,9 @@ function pfEncode(str: string): string {
     .replace(/\(/g, '%28')
     .replace(/\)/g, '%29')
     .replace(/\*/g, '%2A')
+    .replace(/\$/g, '%24')
     .replace(/~/g, '%7E')
+    .replace(/,/g, '%2C')
     // PHP urlencode() does NOT encode '/' — leave it as-is to match PayFast
     .replace(/%2F/g, '/');
 }
@@ -60,10 +64,10 @@ function verifyPayFastSignature(params: Record<string, string>): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.text();
+    const rawBody = await req.text();
     const params: Record<string, string> = {};
 
-    for (const pair of body.split('&')) {
+    for (const pair of rawBody.split('&')) {
       const [key, ...valueParts] = pair.split('=');
       if (key) {
         params[key] = decodeURIComponent(valueParts.join('='));
@@ -76,6 +80,20 @@ export async function POST(req: NextRequest) {
 
     if (!verifyPayFastSignature(params)) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+    }
+
+    // Formal ITN validation against PayFast's validate endpoint (soft gate:
+    // the cryptographic signature above is the real gate. An explicit INVALID
+    // from PayFast rejects; an unreachable endpoint logs a warning and we
+    // proceed on signature verification alone).
+    const validation = await validatePayFastITN(rawBody);
+    if (validation === 'invalid') {
+      return NextResponse.json({ error: 'PayFast ITN validation failed' }, { status: 400 });
+    }
+    if (validation === 'unknown') {
+      console.warn(
+        '[PayFast ITN] validate endpoint unreachable; proceeding on signature verification only',
+      );
     }
 
     const paymentId = params.m_payment_id || 'unknown';
@@ -101,9 +119,34 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/**
+ * POST the raw ITN body back to PayFast's validate endpoint.
+ * Returns 'valid' | 'invalid' | 'unknown'. Forwarding the raw body (exactly
+ * as PayFast sent it) is the most faithful validation per PayFast's spec.
+ */
+async function validatePayFastITN(rawBody: string): Promise<'valid' | 'invalid' | 'unknown'> {
+  try {
+    const res = await fetch(PAYFAST_VALIDATE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: rawBody,
+      signal: AbortSignal.timeout(8000),
+    });
+    const text = await res.text();
+    const t = text.trim();
+    if (t === 'VALID') return 'valid';
+    if (t === 'INVALID') return 'invalid';
+    return 'unknown';
+  } catch (e) {
+    console.error('[PayFast validate error]', e);
+    return 'unknown';
+  }
+}
+
 export async function GET() {
   return NextResponse.json({
     count: paymentStore.count(),
     payments: paymentStore.list(),
+    sandbox: PAYFAST_SANDBOX,
   });
 }

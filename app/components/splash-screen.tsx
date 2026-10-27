@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useApp } from '../context/AppContext.jsx';
+import { processPayment, submitPayFastForm } from '../services/PaymentEngine.js';
 
 const FONT_700_URL = '/scratch/cinzel-700.woff2';
 const FONT_900_URL = '/scratch/cinzel-900.woff2';
@@ -84,9 +86,10 @@ export function SplashScreen() {
     };
 
     const resize = () => {
-      const p = canvas.parentElement!;
-      canvas.width = p.clientWidth;
-      canvas.height = p.clientHeight;
+      const parent = canvasRef.current?.parentElement;
+      if (!parent) return;
+      canvas.width = parent.clientWidth;
+      canvas.height = parent.clientHeight;
       draw();
     };
 
@@ -100,12 +103,62 @@ export function SplashScreen() {
 
   const goWelcome = () => router.push('/calendar');
 
+  const { goTo, setIsPaid, isPaid, user } = useApp();
+  // ── Payment state ──
+  const [payingPlan, setPayingPlan] = useState<'monthly' | 'annual' | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+  const [paySubmitting, setPaySubmitting] = useState(false);
+
+  const initiatePayment = async (planId: 'monthly' | 'annual') => {
+    setPayError(null);
+    setPayingPlan(planId);
+    setPaySubmitting(true);
+    const plan = {
+      id: planId,
+      name: planId === 'annual' ? 'Annual Subscription' : 'Monthly Subscription',
+    };
+    try {
+      const result = await processPayment(plan, user, {
+        onSuccess: (res: any) => {
+          // Offline simulation: mark paid immediately, no external host.
+          if (res && res.mode === 'test') {
+            setIsPaid(true);
+            setPaySubmitting(false);
+            goTo('calendar');
+            return;
+          }
+
+        },
+        onError: (msg: any) => {
+          setPayError(msg);
+          setPaySubmitting(false);
+          setPayingPlan(null);
+        },
+      });
+
+      // sandbox / real: PayFast returned form fields + gateway action.
+      // Auto-submit the form to the PayFast gateway.
+      if (result && result.fields && result.action) {
+        submitPayFastForm(result.fields, result.action);
+        setPaySubmitting(false);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Payment setup failed';
+      setPayError(msg);
+      setPaySubmitting(false);
+      setPayingPlan(null);
+    }
+  };
+
+
+
+
   return (
-    <div
+    <>
+      <div
       className="splash-screen"
       style={{
         position: 'relative',
-        overflow: 'hidden',
         minHeight: '100vh',
         width: '100%',
         background: 'radial-gradient(1200px 800px at 50% 20%, rgba(4,7,18,0.4), transparent 60%), radial-gradient(1000px 600px at 80% 80%, rgba(120,80,30,0.25), transparent 60%)',
@@ -162,24 +215,22 @@ export function SplashScreen() {
           display: 'block',
         }}
       />
-      {/* Content — heading, invitation text, welcome button */}
+      {/* Content — flows naturally, browser scroll handles it */}
       <div
         className="splash-content"
         style={{
-          position: 'absolute',
-          inset: 0,
+          position: 'relative',
           zIndex: 10,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
           textAlign: 'center',
-          padding: '2rem',
+          padding: '2rem 1rem 6rem 1rem',
           paddingTop: '3rem',
-          paddingBottom: '3rem',
           boxSizing: 'border-box',
           width: '100%',
-          maxWidth: '820px',
+          maxWidth: '700px',
           margin: '0 auto',
         }}
       >
@@ -226,169 +277,218 @@ export function SplashScreen() {
           Welcome
         </button>
 
-        {/* Payment section */}
+        {/* Two gold price buttons — Monthly / Annual */}
         <div
-          className="splash-payment-section"
+          className="splash-price-section"
           style={{
-            marginTop: '2rem',
-            padding: '1.5rem',
-            borderTop: '1px solid rgba(255,215,0,0.3)',
-            borderBottom: '1px solid rgba(255,215,0,0.3)',
+            marginTop: '2.5rem',
+            display: 'flex',
+            gap: '1rem',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
-          <h3
-            className="splash-payment-title"
+          <button
+            type="button"
+            className="splash-price-btn splash-price-monthly"
+            disabled={paySubmitting}
+            onClick={() => initiatePayment('monthly')}
+            aria-label="Monthly subscription — $2.99/month"
             style={{
-              margin: 0,
-              marginBottom: '1rem',
+              background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))',
+              border: '1.5px solid #D4AF37',
+              color: '#f0d060',
+              padding: '0.85rem 2rem',
               fontSize: '1rem',
-              color: '#ffd700',
+              fontFamily: "'Cinzel', Georgia, 'Times New Roman', serif",
+              fontWeight: 700,
+              letterSpacing: '0.15em',
               textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              textDecoration: 'none',
+            }}
+            onMouseEnter={(e) => {
+              const t = e.target as HTMLButtonElement;
+              t.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.1))';
+              t.style.color = '#fff';
+              t.style.boxShadow = '0 0 25px rgba(212,175,55,0.4)';
+            }}
+            onMouseLeave={(e) => {
+              const t = e.target as HTMLButtonElement;
+              t.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))';
+              t.style.color = '#f0d060';
+              t.style.boxShadow = 'none';
             }}
           >
-            Support Mercedonius
-          </h3>
-          <p
-            className="splash-payment-desc"
+            Monthly — $2.99
+          </button>
+          <button
+            type="button"
+            className="splash-price-btn splash-price-annual"
+            disabled={paySubmitting}
+            onClick={() => initiatePayment('annual')}
+            aria-label="Annual subscription — $39.99/year"
             style={{
-              margin: '0.5rem 0 1rem 0',
-              fontSize: '0.875rem',
-              color: '#ccc',
-              lineHeight: '1.5',
+              background: 'linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.1))',
+              border: '1.5px solid #f0d060',
+              color: '#fff',
+              padding: '0.85rem 2rem',
+              fontSize: '1rem',
+              fontFamily: "'Cinzel', Georgia, 'Times New Roman', serif",
+              fontWeight: 700,
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              textDecoration: 'none',
+              boxShadow: '0 0 25px rgba(212,175,55,0.4)',
+            }}
+            onMouseEnter={(e) => {
+              const t = e.target as HTMLButtonElement;
+              t.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.35), rgba(212,175,55,0.15))';
+              t.style.boxShadow = '0 0 35px rgba(212,175,55,0.6)';
+            }}
+            onMouseLeave={(e) => {
+              const t = e.target as HTMLButtonElement;
+              t.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.1))';
+              t.style.boxShadow = '0 0 25px rgba(212,175,55,0.4)';
             }}
           >
-            Help development of the Mercedonius calendar. Your support keeps this
-            astronomical calendar project alive.
-          </p>
-
-          <div
-            className="splash-payment-methods"
-            style={{
-              display: 'flex',
-              gap: '1rem',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-            }}
-          >
-            {/* Visa */}
-            <button
-              type="button"
-              className="splash-payment-btn visa"
-              style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid #ffffff',
-                color: '#fff',
-                padding: '0.5rem 1rem',
-                fontSize: '0.875rem',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.2)';
-                (e.target as HTMLButtonElement).style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)';
-                (e.target as HTMLButtonElement).style.boxShadow = 'none';
-              }}
-            >
-              Visa
-            </button>
-
-            {/* Mastercard */}
-            <button
-              type="button"
-              className="splash-payment-btn mastercard"
-              style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid #ffffff',
-                color: '#fff',
-                padding: '0.5rem 1rem',
-                fontSize: '0.875rem',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.2)';
-                (e.target as HTMLButtonElement).style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)';
-                (e.target as HTMLButtonElement).style.boxShadow = 'none';
-              }}
-            >
-              Mastercard
-            </button>
-
-            {/* Amex */}
-            <button
-              type="button"
-              className="splash-payment-btn amex"
-              style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid #ffffff',
-                color: '#fff',
-                padding: '0.5rem 1rem',
-                fontSize: '0.875rem',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.2)';
-                (e.target as HTMLButtonElement).style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)';
-                (e.target as HTMLButtonElement).style.boxShadow = 'none';
-              }}
-            >
-              Amex
-            </button>
-
-            {/* PayPal */}
-            <button
-              type="button"
-              className="splash-payment-btn paypal"
-              style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid #ffffff',
-                color: '#fff',
-                padding: '0.5rem 1rem',
-                fontSize: '0.875rem',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.2)';
-                (e.target as HTMLButtonElement).style.boxShadow = '0 0 15px rgba(255,255,255,0.3)';
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)';
-                (e.target as HTMLButtonElement).style.boxShadow = 'none';
-              }}
-            >
-              PayPal
-            </button>
-          </div>
-
-          <p
-            className="splash-payment-pricing"
-            style={{
-              marginTop: '1rem',
-              fontSize: '0.875rem',
-              color: '#ffd700',
-              textAlign: 'center',
-            }}
-          >
-            / month or / year
-          </p>
+            Annual — $39.99
+          </button>
         </div>
+
+        {/* ── Dedicated secure payment trust badge (clickable, styled like PaymentScreen) ── */}
+        <button
+          type="button"
+          className="splash-secure-pay-btn"
+          disabled={paySubmitting}
+          onClick={() => {
+            const plan = payingPlan || 'monthly';
+            initiatePayment(plan as 'monthly' | 'annual');
+          }}
+          aria-label="Proceed to secure payment"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '1.5rem 1rem',
+            border: '1px solid rgba(212,175,55,0.25)',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, rgba(212,175,55,0.1), rgba(212,175,55,0.03))',
+            color: '#fff',
+            cursor: paySubmitting ? 'not-allowed' : 'pointer',
+            transition: 'all 0.3s ease',
+            width: '100%',
+            maxWidth: '320px',
+            opacity: paySubmitting ? 0.6 : 1,
+            textAlign: 'center',
+          }}
+          onMouseEnter={(e) => {
+            if (paySubmitting) return;
+            const t = e.target as HTMLButtonElement;
+            t.style.borderColor = 'rgba(212,175,55,0.5)';
+            t.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(212,175,55,0.08))';
+            t.style.boxShadow = '0 0 30px rgba(212,175,55,0.4)';
+          }}
+          onMouseLeave={(e) => {
+            if (paySubmitting) return;
+            const t = e.target as HTMLButtonElement;
+            t.style.borderColor = 'rgba(212,175,55,0.25)';
+            t.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.1), rgba(212,175,55,0.03))';
+            t.style.boxShadow = 'none';
+          }}
+        >
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#D4AF37"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <span
+              className="font-cinzel"
+              style={{
+                fontSize: '11px',
+                letterSpacing: '0.15em',
+                color: '#D4AF37',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+              }}
+            >
+              Secure Payment
+            </span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#D4AF37"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              <polyline points="9 12 11 14 15 10" />
+            </svg>
+          </div>
+          <p
+            style={{
+              fontFamily: "'Cormorant Garamond', Georgia, serif",
+              fontSize: '0.85rem',
+              color: 'rgba(255,255,255,0.7)',
+              fontStyle: 'italic',
+              margin: 0,
+            }}
+          >
+            Protected by PayFast
+          </p>
+          <p
+            style={{
+              fontFamily: "'Cinzel', Georgia, 'Times New Roman', serif",
+              fontSize: '9px',
+              letterSpacing: '0.2em',
+              color: 'rgba(255,255,255,0.4)',
+              marginTop: '0.25rem',
+              textTransform: 'uppercase',
+              fontWeight: 400,
+            }}
+          >
+            PCI-DSS Compliant • 256-bit SSL Encryption
+          </p>
+          {paySubmitting && (
+            <span style={{ fontSize: '0.8rem', color: '#D4AF37', marginTop: '0.5rem' }}>
+              Processing…
+            </span>
+          )}
+        </button>
+        {payError && (
+          <p style={{
+            color: '#f87171',
+            marginTop: '1rem',
+            fontSize: '0.85rem',
+            fontWeight: 500,
+            textAlign: 'center',
+          }}>
+            {payError}
+          </p>
+        )}
       </div>
     </div>
+    </>
   );
 }

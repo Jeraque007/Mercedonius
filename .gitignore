@@ -25,3 +25,8 @@ yarn-debug.log*
 yarn-error.log*
 
 .vercel
+
+# Build output logs (temporary)
+build_output*.txt
+tsc_output.txt
+build_error.log
